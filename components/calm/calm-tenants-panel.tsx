@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Building2,
@@ -13,6 +14,7 @@ import {
   ArrowUpRight,
   Settings,
   ExternalLink,
+  Plus,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -181,13 +183,21 @@ export function CalmTenantsPanel() {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-border bg-card/50 p-3 sm:p-4">
-        <div className="flex items-start gap-2">
-          <Building2 className="h-4 w-4 text-brand shrink-0 mt-0.5" />
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Each row in <code className="text-[11px] font-mono">tip_calm_tenant</code> registers a
-            CALM tenant with inbound provider endpoint and outbound OAuth client reference. Secrets
-            are stored by reference only — never in plaintext.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start gap-2 min-w-0">
+            <Building2 className="h-4 w-4 text-brand shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Each row in <code className="text-[11px] font-mono">tip_calm_tenant</code> registers a
+              CALM tenant with inbound provider endpoint and outbound OAuth client reference. Secrets
+              are stored by reference only — never in plaintext.
+            </p>
+          </div>
+          <Button size="sm" className="h-8 shrink-0 bg-brand text-brand-foreground hover:bg-brand/90" asChild>
+            <Link href="/system-admin/calm/register">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Register Tenant
+            </Link>
+          </Button>
         </div>
       </div>
 

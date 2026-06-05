@@ -81,10 +81,13 @@ export function CalmLayout({ children, showKpis = true }: CalmLayoutProps) {
                 <Button
                   size="sm"
                   className="h-8 text-xs sm:text-sm bg-brand text-brand-foreground hover:bg-brand/90"
+                  asChild
                 >
-                  <Plus className="h-3.5 w-3.5 sm:mr-2" />
-                  <span className="hidden sm:inline">Register Tenant</span>
-                  <span className="sm:hidden">Add</span>
+                  <Link href="/system-admin/calm/register">
+                    <Plus className="h-3.5 w-3.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Register Tenant</span>
+                    <span className="sm:hidden">Add</span>
+                  </Link>
                 </Button>
               </div>
             }
