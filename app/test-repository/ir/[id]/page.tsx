@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { AppShell } from '@/components/app-shell'
@@ -894,7 +894,12 @@ function StepInspectorPanel({
 export default function IREditorPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const irId = params.id as string
+  const fromTaskId = searchParams.get('fromTask')
+  const returnHref = fromTaskId
+    ? `/test-repository/tasks/${fromTaskId}?tab=ir-steps`
+    : '/test-repository/ir'
   
   // State
   const [isLoading, setIsLoading] = React.useState(true)
@@ -941,10 +946,15 @@ export default function IREditorPage() {
     setIsDirty(true)
   }
   
-  const handleSave = () => {
-    // Would save and increment version
+  const handleSave = async () => {
     setIsDirty(false)
-    // Show toast
+    const { toast } = await import('sonner')
+    toast.success('IR saved', {
+      description: 'Version 2.4.0 published and linked to the test case.',
+    })
+    if (fromTaskId) {
+      router.push(returnHref)
+    }
   }
   
   const handleAddStep = (stepType: IRStepType) => {
@@ -1003,15 +1013,26 @@ export default function IREditorPage() {
                   variant="ghost"
                   size="icon"
                   className="shrink-0 h-8 w-8 -ml-1"
-                  onClick={() => router.push('/test-repository/ir')}
+                  onClick={() => router.push(returnHref)}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <PageBreadcrumb
-                  items={[
-                    { label: 'IR Browser', href: '/test-repository/ir' },
-                    { label: irMetadata.id },
-                  ]}
+                  items={
+                    fromTaskId
+                      ? [
+                          { label: 'Test Cases', href: '/test-repository/tasks' },
+                          {
+                            label: irMetadata.test_case_name,
+                            href: returnHref,
+                          },
+                          { label: 'Edit IR' },
+                        ]
+                      : [
+                          { label: 'IR Browser', href: '/test-repository/ir' },
+                          { label: irMetadata.id },
+                        ]
+                  }
                 />
               </div>
 

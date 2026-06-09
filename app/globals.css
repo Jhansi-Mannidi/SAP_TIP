@@ -45,6 +45,11 @@
   --brand-soft: #fef3c7;
   --brand-soft-foreground: #78350f;
 
+  /* Breadcrumb typography — app-wide */
+  --breadcrumb-font-size: 13px;
+  --breadcrumb-line-height: 1.35;
+  --breadcrumb-sep-size: 0.875rem;
+
   /* Semantic status colors */
   --success: #059669;
   --success-foreground: #ffffff;
@@ -880,8 +885,8 @@
 
   .page-breadcrumb-list {
     @apply flex flex-row flex-nowrap items-center gap-0 list-none m-0 p-0 min-w-0 max-w-full;
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: var(--breadcrumb-font-size);
+    line-height: var(--breadcrumb-line-height);
     color: var(--muted-foreground);
   }
 
@@ -894,7 +899,9 @@
   }
 
   .page-breadcrumb-sep {
-    @apply size-3 shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
+    width: var(--breadcrumb-sep-size);
+    height: var(--breadcrumb-sep-size);
+    @apply shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
   }
 
   .page-breadcrumb-link {
@@ -908,13 +915,27 @@
   /* Legacy markup: div + Link + ChevronRight — hide icons, force one row */
   .page-breadcrumb:not(:has(.page-breadcrumb-list)) {
     @apply flex flex-row flex-nowrap items-center min-w-0 max-w-full overflow-hidden;
-    font-size: 11px;
-    line-height: 1.25;
+    font-size: var(--breadcrumb-font-size);
+    line-height: var(--breadcrumb-line-height);
     color: var(--muted-foreground);
   }
 
   .page-breadcrumb:not(:has(.page-breadcrumb-list)) > svg {
-    @apply size-3 shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
+    width: var(--breadcrumb-sep-size);
+    height: var(--breadcrumb-sep-size);
+    @apply shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
+  }
+
+  /* App shell header breadcrumb */
+  .app-shell-breadcrumb {
+    font-size: var(--breadcrumb-font-size);
+    line-height: var(--breadcrumb-line-height);
+    @apply text-muted-foreground;
+  }
+
+  .app-shell-breadcrumb > svg {
+    width: var(--breadcrumb-sep-size);
+    height: var(--breadcrumb-sep-size);
   }
 
   .page-breadcrumb:not(:has(.page-breadcrumb-list)) a {

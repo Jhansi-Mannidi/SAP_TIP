@@ -8,7 +8,7 @@ import { StatusBadge } from '@/components/status-badge'
 import { TaskDefinitionGraph, ValidationPanel } from '@/components/task-definition-graph'
 import { AgentTaskIndicator } from '@/components/agent-task-indicator'
 import { AuditTrailTable } from '@/components/audit-trail-table'
-import { BPCoverageMatrix } from '@/components/bp-coverage-matrix'
+import { ScenarioCoveragePanel } from '@/components/test-repository/scenario-coverage-panel'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -809,32 +809,14 @@ export default function TestScenarioDetailPage() {
             
             {/* Coverage Tab */}
             <TabsContent value="coverage" className="h-full m-0 p-6 overflow-auto">
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>BP Scope Coverage</CardTitle>
-                    <CardDescription>
-                      SAP Best Practice scope items covered by this scenario
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-3">
-                      {scenario.bp_scope_items.length > 0 ? (
-                        scenario.bp_scope_items.map(item => (
-                          <div key={item} className="flex items-center gap-2 p-3 border rounded-lg bg-emerald-50 border-emerald-200">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                            <span className="font-mono font-medium text-emerald-700">{item}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="page-description">No BP scope items linked</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <BPCoverageMatrix className="h-[400px]" />
-              </div>
+              <ScenarioCoveragePanel
+                scenarioCode={scenario.code}
+                scenarioName={scenario.name}
+                businessProcess={scenario.business_process}
+                bpScopeItems={scenario.bp_scope_items}
+                tasks={tasks}
+                passRatePct={scenario.last_pass_rate_pct}
+              />
             </TabsContent>
             
             {/* Execution History Tab */}

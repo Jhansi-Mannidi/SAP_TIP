@@ -581,7 +581,7 @@ export function AppShell({
                 {/* Breadcrumbs - hidden on mobile */}
                 <nav
                   aria-label="Breadcrumb"
-                  className="hidden md:flex items-center min-w-0 max-w-[min(100%,28rem)] text-[11px] leading-none text-muted-foreground"
+                  className="app-shell-breadcrumb hidden md:flex items-center min-w-0 max-w-[min(100%,32rem)]"
                 >
                   <Link
                     href="/"
@@ -591,7 +591,7 @@ export function AppShell({
                   </Link>
                   {activeAppData && activeAppData.id !== 'dashboard' && (
                     <>
-                      <ChevronRight className="size-3 shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
+                      <ChevronRight className="shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
                       <Link
                         href={activeAppData.href}
                         className="truncate hover:text-foreground transition-colors font-medium text-foreground"
@@ -602,7 +602,7 @@ export function AppShell({
                   )}
                   {breadcrumbs.map((crumb, idx) => (
                     <React.Fragment key={idx}>
-                      <ChevronRight className="size-3 shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
+                      <ChevronRight className="shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
                       {crumb.href ? (
                         <Link
                           href={crumb.href}

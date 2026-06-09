@@ -898,6 +898,7 @@ Prerequisites: Customer master and material master must exist with valid ATP.`,
     last_7_days_executions: 23,
     avg_duration_ms: 45000,
   },
+  ir_id: 'ir_va01_create',
   ir_steps: MOCK_IR_STEPS_VA01,
   execution_history: [
     {

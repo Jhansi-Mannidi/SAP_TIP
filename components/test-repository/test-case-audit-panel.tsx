@@ -4,16 +4,13 @@ import * as React from 'react'
 import { motion } from 'framer-motion'
 import {
   History,
-  Shield,
   ShieldCheck,
-  Users,
   Download,
   Search,
   Bot,
   User,
 } from 'lucide-react'
 
-import { KpiStatCard, StaggerGrid } from '@/components/design-system'
 import { AuditTrailTable, type AuditEvent } from '@/components/audit-trail-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -42,9 +39,6 @@ export function TestCaseAuditPanel({
     [testCaseId],
   )
 
-  const verifiedCount = events.filter((e) => e.signatureStatus === 'verified').length
-  const signedCount = events.filter((e) => e.signatureStatus === 'signed').length
-  const uniqueActors = new Set(events.map((e) => e.actor.id)).size
   const latest = events[0]
 
   return (
@@ -76,37 +70,6 @@ export function TestCaseAuditPanel({
           </div>
         </div>
       </div>
-
-      <StaggerGrid columns="grid-cols-2 lg:grid-cols-4" className="gap-3 w-full" fast>
-        <KpiStatCard
-          label="Total Events"
-          value={events.length}
-          icon={History}
-          tone="brand"
-          className="min-h-[5.5rem]"
-        />
-        <KpiStatCard
-          label="Verified"
-          value={verifiedCount}
-          icon={ShieldCheck}
-          tone="success"
-          className="min-h-[5.5rem]"
-        />
-        <KpiStatCard
-          label="Signed"
-          value={signedCount}
-          icon={Shield}
-          tone="info"
-          className="min-h-[5.5rem]"
-        />
-        <KpiStatCard
-          label="Contributors"
-          value={uniqueActors}
-          icon={Users}
-          tone="neutral"
-          className="min-h-[5.5rem]"
-        />
-      </StaggerGrid>
 
       {latest && (
         <Card className="shadow-[var(--shadow-xs)] border-border/80">

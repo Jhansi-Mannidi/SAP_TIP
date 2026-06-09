@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -108,17 +108,70 @@ import {
 } from '@/lib/mock-data'
 
 // IR Step type icons
-const irStepTypeConfig: Record<IRStepType, { icon: React.ElementType; label: string; color: string }> = {
-  open_transaction: { icon: Play, label: 'Open Transaction', color: 'bg-blue-100 text-blue-700' },
-  set_field: { icon: FormInput, label: 'Set Field', color: 'bg-slate-100 text-slate-700' },
-  press_button: { icon: MousePointer, label: 'Press Button', color: 'bg-amber-100 text-amber-700' },
-  press_enter: { icon: Keyboard, label: 'Press Enter', color: 'bg-slate-100 text-slate-600' },
-  select_row: { icon: SquareCheck, label: 'Select Row', color: 'bg-purple-100 text-purple-700' },
-  click_menu: { icon: MoreHorizontal, label: 'Click Menu', color: 'bg-indigo-100 text-indigo-700' },
-  assert_statusbar: { icon: CheckCircle2, label: 'Assert Status Bar', color: 'bg-emerald-100 text-emerald-700' },
-  assert_field: { icon: CheckCircle2, label: 'Assert Field', color: 'bg-emerald-100 text-emerald-700' },
-  capture_field: { icon: Variable, label: 'Capture Field', color: 'bg-cyan-100 text-cyan-700' },
-  wait: { icon: Timer, label: 'Wait', color: 'bg-slate-100 text-slate-500' },
+const irStepTypeConfig: Record<
+  IRStepType,
+  { icon: React.ElementType; label: string; bg: string; color: string }
+> = {
+  open_transaction: {
+    icon: Play,
+    label: 'Open Transaction',
+    bg: 'bg-blue-500/10 ring-blue-500/20',
+    color: 'text-blue-600 dark:text-blue-400',
+  },
+  set_field: {
+    icon: FormInput,
+    label: 'Set Field',
+    bg: 'bg-muted/60 ring-border/60',
+    color: 'text-muted-foreground',
+  },
+  press_button: {
+    icon: MousePointer,
+    label: 'Press Button',
+    bg: 'bg-amber-500/10 ring-amber-500/20',
+    color: 'text-amber-600 dark:text-amber-400',
+  },
+  press_enter: {
+    icon: Keyboard,
+    label: 'Press Enter',
+    bg: 'bg-muted/60 ring-border/60',
+    color: 'text-muted-foreground',
+  },
+  select_row: {
+    icon: SquareCheck,
+    label: 'Select Row',
+    bg: 'bg-violet-500/10 ring-violet-500/20',
+    color: 'text-violet-600 dark:text-violet-400',
+  },
+  click_menu: {
+    icon: MoreHorizontal,
+    label: 'Click Menu',
+    bg: 'bg-indigo-500/10 ring-indigo-500/20',
+    color: 'text-indigo-600 dark:text-indigo-400',
+  },
+  assert_statusbar: {
+    icon: CheckCircle2,
+    label: 'Assert Status Bar',
+    bg: 'bg-emerald-500/10 ring-emerald-500/20',
+    color: 'text-emerald-600 dark:text-emerald-400',
+  },
+  assert_field: {
+    icon: CheckCircle2,
+    label: 'Assert Field',
+    bg: 'bg-emerald-500/10 ring-emerald-500/20',
+    color: 'text-emerald-600 dark:text-emerald-400',
+  },
+  capture_field: {
+    icon: Variable,
+    label: 'Capture Field',
+    bg: 'bg-cyan-500/10 ring-cyan-500/20',
+    color: 'text-cyan-600 dark:text-cyan-400',
+  },
+  wait: {
+    icon: Timer,
+    label: 'Wait',
+    bg: 'bg-muted/60 ring-border/60',
+    color: 'text-muted-foreground',
+  },
 }
 
 // Task type icons
@@ -158,48 +211,53 @@ function formatRelativeTime(dateString: string): string {
 }
 
 // IR Step Row Component
-function IRStepRow({ step, isReadOnly = true }: { step: IRStep; isReadOnly?: boolean }) {
+function IRStepRow({ step }: { step: IRStep }) {
   const config = irStepTypeConfig[step.step_type]
   const StepIcon = config?.icon || Play
-  
+
   return (
-    <div className={cn(
-      'flex items-start gap-4 p-4 border rounded-lg transition-colors',
-      step.is_assertion && 'border-emerald-200 bg-emerald-50/30',
-      !step.is_assertion && 'hover:bg-muted/30'
-    )}>
-      {/* Order Number */}
-      <Badge variant="outline" className="font-mono text-xs shrink-0 w-8 justify-center mt-1">
+    <div
+      className={cn(
+        'flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-4 transition-colors hover:bg-muted/20',
+        step.is_assertion && 'bg-emerald-500/[0.03] border-l-[3px] border-l-emerald-500/50',
+      )}
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold tabular-nums text-muted-foreground mt-0.5">
         {step.order}
-      </Badge>
-      
-      {/* Step Type Icon */}
-      <div className={cn(
-        'p-2 rounded-md shrink-0',
-        config?.color || 'bg-slate-100 text-slate-700'
-      )}>
-        <StepIcon className="h-4 w-4" />
+      </span>
+
+      <div
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset',
+          config?.bg ?? 'bg-muted/60 ring-border/60',
+          config?.color ?? 'text-muted-foreground',
+        )}
+      >
+        <StepIcon className="h-4 w-4" strokeWidth={2.25} />
       </div>
-      
-      {/* Step Details */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">{step.description}</span>
+
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-semibold text-foreground leading-snug">{step.description}</span>
+          <Badge variant="outline" className="h-5 text-[10px] border-0 pill pill-neutral">
+            {config?.label ?? step.step_type}
+          </Badge>
           {step.is_assertion && (
-            <Badge variant="outline" className="text-xs border-emerald-300 text-emerald-700">
-              Assertion
-            </Badge>
+            <Badge className="h-5 text-[10px] border-0 pill pill-success">Assertion</Badge>
           )}
-          {step.confidence && step.confidence < 100 && (
+          {step.confidence != null && step.confidence < 100 && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="outline" className={cn(
-                    'text-xs',
-                    step.confidence >= 95 && 'border-emerald-300 text-emerald-700',
-                    step.confidence >= 85 && step.confidence < 95 && 'border-amber-300 text-amber-700',
-                    step.confidence < 85 && 'border-red-300 text-red-700'
-                  )}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'h-5 text-[10px] border-0',
+                      step.confidence >= 95 && 'pill pill-success',
+                      step.confidence >= 85 && step.confidence < 95 && 'pill pill-warning',
+                      step.confidence < 85 && 'pill pill-danger',
+                    )}
+                  >
                     {step.confidence}%
                   </Badge>
                 </TooltipTrigger>
@@ -208,24 +266,24 @@ function IRStepRow({ step, isReadOnly = true }: { step: IRStep; isReadOnly?: boo
             </TooltipProvider>
           )}
         </div>
-        
-        {/* Parameters */}
-        <div className="mt-2 flex flex-wrap gap-2">
-          {Object.entries(step.parameters).map(([key, value]) => (
-            <code 
-              key={key} 
-              className="text-xs bg-muted px-2 py-1 rounded font-mono"
-            >
-              {key}={typeof value === 'object' ? JSON.stringify(value) : String(value)}
-            </code>
-          ))}
-        </div>
-        
-        {/* Healing Hints */}
+
+        {Object.keys(step.parameters).length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(step.parameters).map(([key, value]) => (
+              <code
+                key={key}
+                className="text-[11px] font-mono bg-muted/60 border border-border/60 px-2 py-0.5 rounded-md text-foreground"
+              >
+                {key}={typeof value === 'object' ? JSON.stringify(value) : String(value)}
+              </code>
+            ))}
+          </div>
+        )}
+
         {step.healing_hints && step.healing_hints.length > 0 && (
-          <div className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3 mt-0.5 text-amber-500" />
-            <span>{step.healing_hints.join(' | ')}</span>
+          <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/[0.04] px-3 py-2 text-xs text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-brand" />
+            <span className="leading-relaxed">{step.healing_hints.join(' · ')}</span>
           </div>
         )}
       </div>
@@ -236,6 +294,7 @@ function IRStepRow({ step, isReadOnly = true }: { step: IRStep; isReadOnly?: boo
 export default function TestCaseDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = React.useState(true)
   const [activeTab, setActiveTab] = React.useState('overview')
   const [isGenerateIROpen, setIsGenerateIROpen] = React.useState(false)
@@ -304,6 +363,11 @@ export default function TestCaseDetailPage() {
     const timer = setTimeout(() => setIsLoading(false), 600)
     return () => clearTimeout(timer)
   }, [])
+
+  React.useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab) setActiveTab(tab)
+  }, [searchParams])
   
   // Use mock data
   const testCase = MOCK_TEST_CASE_DETAIL
@@ -719,24 +783,34 @@ export default function TestCaseDetailPage() {
             </TabsContent>
             
             {/* IR Steps Tab */}
-            <TabsContent value="ir-steps" className="p-6 m-0">
-              <div className="flex items-center justify-between mb-4">
+            <TabsContent value="ir-steps" className="p-4 sm:p-6 m-0">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold">IR Steps</h3>
+                  <h3 className="text-lg font-semibold tracking-tight">IR Steps</h3>
                   <p className="page-description">
                     {testCase.ir_steps.length} steps in this test case IR
                   </p>
                 </div>
-                <Button className="gap-1">
-                  <Pencil className="h-4 w-4" />
-                  Edit IR
+                <Button
+                  size="sm"
+                  className="gap-1.5 bg-brand text-brand-foreground hover:bg-brand/90 shrink-0"
+                  asChild
+                >
+                  <Link
+                    href={`/test-repository/ir/${testCase.ir_id}?fromTask=${testCase.id}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit IR
+                  </Link>
                 </Button>
               </div>
-              
-              <div className="space-y-2">
-                {testCase.ir_steps.map(step => (
-                  <IRStepRow key={step.id} step={step} isReadOnly />
-                ))}
+
+              <div className="rounded-xl border border-border bg-card overflow-hidden shadow-[var(--shadow-xs)]">
+                <div className="divide-y divide-border/60">
+                  {testCase.ir_steps.map((step) => (
+                    <IRStepRow key={step.id} step={step} />
+                  ))}
+                </div>
               </div>
             </TabsContent>
             
@@ -835,16 +909,18 @@ export default function TestCaseDetailPage() {
                     <TableBody>
                       {testCase.execution_history.map(exec => (
                         <TableRow key={exec.id} className="transition-colors hover:bg-muted/40">
-                          <TableCell className="font-mono text-xs font-semibold text-foreground">
-                            {exec.id}
+                          <TableCell>
+                            <span className="font-mono text-[13px] font-semibold tracking-tight text-foreground">
+                              {exec.id}
+                            </span>
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm flex items-center gap-1 flex-wrap">
-                              <span className="font-mono text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className="font-mono text-[13px] text-muted-foreground">
                                 {exec.suite_context}
                               </span>
                               <span className="text-muted-foreground/60">/</span>
-                              <span className="font-mono text-xs text-foreground">
+                              <span className="font-mono text-[13px] font-semibold tracking-tight text-foreground">
                                 {exec.scenario_context}
                               </span>
                             </div>
@@ -861,14 +937,16 @@ export default function TestCaseDetailPage() {
                               </Tooltip>
                             </TooltipProvider>
                           </TableCell>
-                          <TableCell className="text-sm font-mono tabular-nums text-foreground">
-                            {formatDuration(exec.duration_ms)}
+                          <TableCell>
+                            <span className="text-sm font-mono tabular-nums font-semibold text-foreground">
+                              {formatDuration(exec.duration_ms)}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={exec.state} />
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-foreground/90 truncate max-w-[220px] block">
+                            <span className="text-sm font-medium text-foreground truncate max-w-[220px] block">
                               {exec.outcome_message}
                             </span>
                           </TableCell>
@@ -879,23 +957,23 @@ export default function TestCaseDetailPage() {
                                 {exec.healing_events}
                               </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-sm text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell>
                             {exec.defect_id ? (
                               <Link
                                 href={`/defect-manager/${exec.defect_id}`}
-                                className="text-sm font-mono font-semibold text-destructive hover:underline"
+                                className="font-mono text-[13px] font-semibold tracking-tight text-destructive hover:underline"
                               >
                                 {exec.defect_id}
                               </Link>
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-sm text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="sm" className="gap-1 text-foreground hover:text-brand">
+                            <Button variant="ghost" size="sm" className="gap-1 text-sm text-foreground hover:text-brand">
                               <Eye className="h-4 w-4" />
                               Replay
                             </Button>
@@ -910,7 +988,7 @@ export default function TestCaseDetailPage() {
             
             {/* Comments Tab */}
             <TabsContent value="comments" className="p-4 sm:p-6 m-0">
-              <div className="max-w-3xl">
+              <div className="w-full">
                 <div className="section-card">
                   <div className="px-4 sm:px-5 py-4 border-b border-border">
                     <h3 className="text-base font-semibold tracking-tight">Comments</h3>
