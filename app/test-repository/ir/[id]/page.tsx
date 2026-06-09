@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { AppShell } from '@/components/app-shell'
 import { PageHeader } from '@/components/design-system'
+import { PageBreadcrumb } from '@/components/page-breadcrumb'
 import { staggerItem } from '@/lib/animations'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,14 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { IRExecutorCodePreviewDialog } from '@/components/test-repository/ir-executor-code-preview-dialog'
 import {
   Sheet,
   SheetContent,
@@ -229,19 +223,50 @@ function validateSteps(steps: IRStep[]): ValidationIssue[] {
   return issues
 }
 
+function reorderSteps(steps: IRStep[], sourceId: string, targetId: string): IRStep[] {
+  const sorted = [...steps].sort((a, b) => a.order - b.order)
+  const fromIndex = sorted.findIndex((s) => s.id === sourceId)
+  const toIndex = sorted.findIndex((s) => s.id === targetId)
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return steps
+
+  const next = [...sorted]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next.map((step, index) => ({ ...step, order: index + 1 }))
+}
+
 function InspectorSection({
   title,
+  description,
+  icon: Icon,
   children,
   className,
 }: {
   title: string
+  description?: string
+  icon?: React.ElementType
   children: React.ReactNode
   className?: string
 }) {
   return (
-    <section className={cn('py-5 first:pt-0 border-b border-border/60 last:border-0', className)}>
-      <h4 className="micro-label mb-4">{title}</h4>
-      {children}
+    <section
+      className={cn(
+        'rounded-xl border border-border/70 bg-card shadow-[var(--shadow-xs)] overflow-hidden mb-4 last:mb-0',
+        className,
+      )}
+    >
+      <div className="flex items-start gap-2.5 px-4 py-3 border-b border-border/50 bg-muted/20">
+        {Icon && (
+          <div className="h-7 w-7 rounded-lg bg-brand/10 ring-1 ring-inset ring-brand/15 flex items-center justify-center shrink-0">
+            <Icon className="h-3.5 w-3.5 text-brand" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h4 className="text-sm font-semibold leading-tight">{title}</h4>
+          {description && <p className="caption-text mt-0.5">{description}</p>}
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
     </section>
   )
 }
@@ -251,14 +276,45 @@ function StepProgressTimeline({
   selectedStepId,
   validationIssues,
   onSelect,
+  onReorder,
 }: {
   steps: IRStep[]
   selectedStepId: string | null
   validationIssues: ValidationIssue[]
   onSelect: (id: string) => void
+  onReorder: (sourceId: string, targetId: string) => void
 }) {
   const sorted = [...steps].sort((a, b) => a.order - b.order)
   const selectedIndex = sorted.findIndex((s) => s.id === selectedStepId)
+  const [draggedId, setDraggedId] = React.useState<string | null>(null)
+  const [dragOverId, setDragOverId] = React.useState<string | null>(null)
+
+  const handleDragStart = (e: React.DragEvent, stepId: string) => {
+    e.dataTransfer.setData('text/plain', stepId)
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggedId(stepId)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedId(null)
+    setDragOverId(null)
+  }
+
+  const handleDragOver = (e: React.DragEvent, stepId: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverId !== stepId) setDragOverId(stepId)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    const sourceId = e.dataTransfer.getData('text/plain')
+    if (sourceId && sourceId !== targetId) {
+      onReorder(sourceId, targetId)
+    }
+    setDraggedId(null)
+    setDragOverId(null)
+  }
 
   return (
     <div className="py-1">
@@ -277,8 +333,16 @@ function StepProgressTimeline({
         const hasError = stepErrors.length > 0
         const hasWarning = stepWarnings.length > 0
 
+        const isDragging = draggedId === step.id
+        const isDragOver = dragOverId === step.id && draggedId !== step.id
+
         return (
-          <div key={step.id} className="flex gap-3">
+          <div
+            key={step.id}
+            className={cn('flex gap-3 transition-opacity', isDragging && 'opacity-40')}
+            onDragOver={(e) => handleDragOver(e, step.id)}
+            onDrop={(e) => handleDrop(e, step.id)}
+          >
             <div className="flex w-10 shrink-0 flex-col items-center pt-3">
               <motion.button
                 type="button"
@@ -322,16 +386,25 @@ function StepProgressTimeline({
               )}
             </div>
 
-            <motion.button
-              type="button"
+            <motion.div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelect(step.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onSelect(step.id)
+                }
+              }}
               variants={staggerItem}
               className={cn(
-                'group flex-1 mb-2.5 text-left rounded-xl border p-3.5 transition-all min-w-0',
+                'group flex-1 mb-2.5 text-left rounded-xl border p-3.5 transition-all min-w-0 cursor-pointer',
                 isLast && 'mb-0',
+                isDragOver && 'border-brand ring-2 ring-brand/25 bg-brand/[0.04]',
                 isSelected &&
                   'border-brand/45 bg-brand/[0.06] shadow-[var(--shadow-sm)] ring-1 ring-brand/15',
                 !isSelected &&
+                  !isDragOver &&
                   'border-border/70 bg-card hover:border-brand/25 hover:bg-muted/25',
                 hasError && !isSelected && 'border-red-500/35 bg-red-500/[0.04]',
                 hasWarning && !hasError && !isSelected && 'border-amber-500/30 bg-amber-500/[0.03]',
@@ -352,7 +425,24 @@ function StepProgressTimeline({
                   </p>
                   <p className="caption-text mt-1">{config.label}</p>
                 </div>
-                <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
+                <div
+                  draggable
+                  title="Drag to reorder"
+                  onDragStart={(e) => {
+                    e.stopPropagation()
+                    handleDragStart(e, step.id)
+                  }}
+                  onDragEnd={handleDragEnd}
+                  onClick={(e) => e.stopPropagation()}
+                  className={cn(
+                    'flex h-8 w-6 shrink-0 items-center justify-center rounded-md mt-0.5',
+                    'cursor-grab active:cursor-grabbing text-muted-foreground/50',
+                    'hover:bg-muted/60 hover:text-muted-foreground',
+                    'opacity-60 group-hover:opacity-100 transition-opacity',
+                  )}
+                >
+                  <GripVertical className="h-4 w-4" />
+                </div>
               </div>
 
               {(step.is_assertion ||
@@ -389,7 +479,7 @@ function StepProgressTimeline({
                   )}
                 </div>
               )}
-            </motion.button>
+            </motion.div>
           </div>
         )
       })}
@@ -440,8 +530,8 @@ function StepInspectorPanel({
   }
   
   return (
-    <div className="h-full flex flex-col bg-background">
-      <div className="px-6 py-5 border-b border-border bg-muted/15">
+    <div className="h-full min-h-0 flex flex-col bg-background">
+      <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-border bg-gradient-to-r from-brand/[0.04] via-muted/15 to-transparent">
         <div className="flex items-start gap-4 max-w-3xl">
           <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', config.color)}>
             <StepIcon className="h-5 w-5" />
@@ -480,9 +570,9 @@ function StepInspectorPanel({
         )}
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-6 py-2 max-w-3xl">
-          <InspectorSection title="Step definition">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="px-4 sm:px-6 py-4 max-w-3xl mx-auto w-full">
+          <InspectorSection title="Step definition" description="Type and narrative" icon={FormInput}>
           <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
             <Label className="text-sm font-medium">Step Type</Label>
@@ -522,7 +612,7 @@ function StepInspectorPanel({
           </div>
           </InspectorSection>
 
-          <InspectorSection title="Parameters">
+          <InspectorSection title="Parameters" description="Executor bindings" icon={Terminal}>
           <div className="space-y-4">
             
             {/* Common parameters for each step type */}
@@ -705,7 +795,7 @@ function StepInspectorPanel({
           </div>
           </InspectorSection>
 
-          <InspectorSection title="Options">
+          <InspectorSection title="Options" description="Assertion and confidence" icon={CheckCircle2}>
           <div className="flex items-center justify-between gap-4 py-1">
             <div className="space-y-0.5">
               <Label className="text-sm font-medium">Assertion Step</Label>
@@ -740,7 +830,7 @@ function StepInspectorPanel({
           )}
           </InspectorSection>
 
-          <InspectorSection title="Healing Hints" className="border-0 pb-6">
+          <InspectorSection title="Healing Hints" description="AI recovery guidance" icon={Lightbulb}>
           <Collapsible open={hintsOpen} onOpenChange={setHintsOpen}>
             <CollapsibleTrigger asChild>
               <Button
@@ -796,7 +886,7 @@ function StepInspectorPanel({
           </Collapsible>
           </InspectorSection>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
@@ -845,6 +935,11 @@ export default function IREditorPage() {
     setSteps(prev => prev.map(s => s.id === updatedStep.id ? updatedStep : s))
     setIsDirty(true)
   }
+
+  const handleReorderSteps = (sourceId: string, targetId: string) => {
+    setSteps((prev) => reorderSteps(prev, sourceId, targetId))
+    setIsDirty(true)
+  }
   
   const handleSave = () => {
     // Would save and increment version
@@ -872,7 +967,7 @@ export default function IREditorPage() {
   if (isLoading) {
     return (
       <AppShell currentApp="test-repository">
-        <div className="-m-4 sm:-m-6 lg:-m-8 h-[calc(100vh-4rem)] flex flex-col bg-muted/30 p-4 gap-4">
+        <div className="-m-4 sm:-m-6 lg:-m-8 h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] overflow-hidden flex flex-col bg-muted/30 p-4 gap-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-8 w-72" />
@@ -895,26 +990,30 @@ export default function IREditorPage() {
   
   return (
     <AppShell currentApp="test-repository">
-      <div className="-m-4 sm:-m-6 lg:-m-8 flex flex-col min-h-0 flex-1 h-[calc(100vh-4rem)]">
-        <div className="border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-20 shadow-[var(--shadow-xs)]">
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center gap-3 mb-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="shrink-0 h-9 w-9"
-                onClick={() => router.push('/test-repository/ir')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <nav className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-                <span>Test Repository</span>
-                <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
-                <span>IR Browser</span>
-                <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
-                <span className="font-mono text-foreground/80 truncate">{irMetadata.id}</span>
-              </nav>
-            </div>
+      <div className="-m-4 sm:-m-6 lg:-m-8 flex flex-col h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] overflow-hidden">
+        <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur-md z-20 shadow-[var(--shadow-xs)]">
+          <div className="relative overflow-hidden">
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-brand/[0.06] via-transparent to-transparent pointer-events-none"
+              aria-hidden
+            />
+            <div className="relative px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-8 w-8 -ml-1"
+                  onClick={() => router.push('/test-repository/ir')}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <PageBreadcrumb
+                  items={[
+                    { label: 'IR Browser', href: '/test-repository/ir' },
+                    { label: irMetadata.id },
+                  ]}
+                />
+              </div>
 
             <PageHeader
               title={irMetadata.name}
@@ -955,12 +1054,13 @@ export default function IREditorPage() {
                 </div>
               }
             />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden bg-muted/30 p-3 sm:p-4 lg:p-5 gap-3 sm:gap-4 min-h-0">
-          <div className="w-full max-w-[28rem] sm:w-[26rem] lg:w-[28rem] xl:w-[30rem] shrink-0 flex flex-col rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden min-h-0">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="flex-1 flex min-h-0 overflow-hidden bg-muted/25 p-3 sm:p-4 gap-3 sm:gap-4">
+          <div className="w-full max-w-[28rem] sm:w-[26rem] lg:w-[28rem] xl:w-[30rem] shrink-0 flex flex-col min-h-0 rounded-xl border border-border/80 bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+            <div className="shrink-0 px-4 py-3 border-b border-border flex items-center justify-between bg-gradient-to-r from-muted/30 to-transparent">
               <div className="flex items-center gap-2">
                 <h3 className="section-title text-base">Steps</h3>
                 <Badge variant="secondary" className="h-5 text-[10px] tabular-nums">
@@ -1011,7 +1111,7 @@ export default function IREditorPage() {
             </div>
 
             {selectedStep && (
-              <div className="px-4 py-3 border-b border-border bg-muted/10">
+              <div className="shrink-0 px-4 py-3 border-b border-border bg-brand/[0.03]">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                   <span>
                     Step {selectedStep.order} of {steps.length}
@@ -1031,7 +1131,7 @@ export default function IREditorPage() {
               </div>
             )}
 
-            <ScrollArea className="flex-1 px-3 py-3 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-3">
               <motion.div
                 initial="hidden"
                 animate="visible"
@@ -1042,11 +1142,12 @@ export default function IREditorPage() {
                   selectedStepId={selectedStepId}
                   validationIssues={validationIssues}
                   onSelect={setSelectedStepId}
+                  onReorder={handleReorderSteps}
                 />
               </motion.div>
-            </ScrollArea>
+            </div>
 
-            <div className="border-t border-border bg-muted/10 shrink-0">
+            <div className="border-t border-border bg-card shrink-0">
               <div className="px-4 py-3">
                 <div
                   className={cn(
@@ -1072,7 +1173,7 @@ export default function IREditorPage() {
               </div>
 
               {validationIssues.length > 0 && (
-                <ScrollArea className="max-h-40 border-t border-border">
+                <div className="max-h-36 overflow-y-auto overscroll-contain border-t border-border">
                   <div className="p-2 space-y-1">
                     {validationIssues.map((issue, i) => (
                       <button
@@ -1097,17 +1198,17 @@ export default function IREditorPage() {
                       </button>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex-1 min-w-0 rounded-xl border border-border bg-card shadow-[var(--shadow-sm)] overflow-hidden">
+          <div className="flex-1 min-w-0 min-h-0 rounded-xl border border-border/80 bg-card shadow-[var(--shadow-sm)] overflow-hidden flex flex-col">
             <AnimatePresence mode="wait">
               {selectedStep ? (
                 <motion.div
                   key={selectedStep.id}
-                  className="h-full"
+                  className="h-full min-h-0 flex flex-col"
                   initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
@@ -1179,71 +1280,12 @@ export default function IREditorPage() {
         </SheetContent>
       </Sheet>
       
-      {/* Code Preview Dialog */}
-      <Dialog open={isCodePreviewOpen} onOpenChange={setIsCodePreviewOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Generated Executor Code</DialogTitle>
-            <DialogDescription>
-              Preview of the executor-ready code generated from this IR
-            </DialogDescription>
-          </DialogHeader>
-          
-          <ScrollArea className="max-h-[60vh]">
-            <pre className="p-4 bg-slate-950 text-slate-50 rounded-lg text-sm overflow-x-auto">
-              <code>{`// Auto-generated from IR: ${irMetadata.id} v${irMetadata.version}
-// Test Case: ${irMetadata.test_case_name}
-
-import { SAPExecutor, Session } from '@voltus/sap-executor';
-
-export async function execute(session: Session, params: InputParams) {
-  const executor = new SAPExecutor(session);
-  
-${steps.map(step => {
-  switch (step.step_type) {
-    case 'open_transaction':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.openTransaction('${step.parameters.tcode}');`
-    case 'set_field':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.setField('${step.parameters.field}', '${step.parameters.value || '${params.value}'}');`
-    case 'press_enter':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.pressEnter();`
-    case 'press_button':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.pressButton('${step.parameters.button}');`
-    case 'assert_statusbar':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.assertStatusBar({ contains: '${step.parameters.contains}', type: '${step.parameters.message_type || 'S'}' });`
-    case 'capture_field':
-      return `  // Step ${step.order}: ${step.description}
-  const ${step.parameters.variable} = await executor.captureField('${step.parameters.field}');`
-    case 'assert_field':
-      return `  // Step ${step.order}: ${step.description}
-  await executor.assert(${step.parameters.variable}${step.parameters.not_empty ? ' !== ""' : ''});`
-    default:
-      return `  // Step ${step.order}: ${step.description}
-  // ${step.step_type}(${JSON.stringify(step.parameters)});`
-  }
-}).join('\n\n')}
-  
-  return { success: true, created_order_number };
-}`}</code>
-            </pre>
-          </ScrollArea>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCodePreviewOpen(false)}>
-              Close
-            </Button>
-            <Button>
-              <Copy className="h-4 w-4 mr-2" />
-              Copy to Clipboard
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <IRExecutorCodePreviewDialog
+        open={isCodePreviewOpen}
+        onOpenChange={setIsCodePreviewOpen}
+        metadata={irMetadata}
+        steps={steps}
+      />
     </AppShell>
   )
 }

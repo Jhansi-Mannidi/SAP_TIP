@@ -97,7 +97,8 @@ import {
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { 
-  MOCK_TEST_SCENARIOS, 
+  MOCK_TEST_SCENARIOS,
+  getScenarioAuditEvents, 
   MOCK_SCENARIO_DETAIL, 
   MOCK_SCENARIO_TASKS,
   type ScenarioTask 
@@ -265,7 +266,7 @@ export default function TestScenarioDetailPage() {
         <div className="flex-shrink-0 border-b bg-background">
           <div className="p-4 md:p-6">
             {/* Breadcrumb & Back */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <div className="page-breadcrumb mb-4">
               <Link 
                 href="/test-repository/scenarios" 
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
@@ -973,10 +974,7 @@ export default function TestScenarioDetailPage() {
             
             {/* Audit Tab */}
             <TabsContent value="audit" className="h-full m-0 p-6 overflow-auto">
-              <AuditTrailTable
-                entityType="scenario"
-                entityId={scenarioId}
-              />
+              <AuditTrailTable events={getScenarioAuditEvents(scenarioId)} />
             </TabsContent>
           </Tabs>
         </div>

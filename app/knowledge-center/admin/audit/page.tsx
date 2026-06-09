@@ -128,7 +128,7 @@ export default function KBAdminAuditPage() {
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+            <div className="page-breadcrumb mb-3">
               <Link href="/knowledge-center/admin" className="hover:text-foreground">KB Admin</Link>
               <ChevronRight className="h-4 w-4" />
               <span className="text-foreground">Audit Log</span>

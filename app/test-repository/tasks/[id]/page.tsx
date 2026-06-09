@@ -45,7 +45,7 @@ import { AppShell } from '@/components/app-shell'
 import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
 import { StatusBadge } from '@/components/status-badge'
 import { EntityCodeLink } from '@/components/entity-code-link'
-import { AuditTrailTable } from '@/components/audit-trail-table'
+import { TestCaseAuditPanel } from '@/components/test-repository/test-case-audit-panel'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -342,7 +342,7 @@ export default function TestCaseDetailPage() {
         {/* Header */}
         <div className="border-b bg-background px-6 py-4">
           {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+          <div className="page-breadcrumb mb-3">
             <Button
               variant="ghost"
               size="sm"
@@ -996,8 +996,12 @@ export default function TestCaseDetailPage() {
             </TabsContent>
             
             {/* Audit Tab */}
-            <TabsContent value="audit" className="p-6 m-0">
-              <AuditTrailTable entityType="test-case" entityId={testCase.id} />
+            <TabsContent value="audit" className="p-6 m-0 overflow-auto">
+              <TestCaseAuditPanel
+                testCaseId={testCase.id}
+                testCaseCode={testCase.code}
+                testCaseName={testCase.name}
+              />
             </TabsContent>
           </ScrollArea>
         </Tabs>

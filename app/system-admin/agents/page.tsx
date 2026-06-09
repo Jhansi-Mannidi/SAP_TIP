@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { 
+import {
   Bot,
   Search,
   MoreHorizontal,
@@ -13,10 +13,13 @@ import {
   CheckCircle2,
   XCircle,
   Wrench,
+  ChevronRight,
+  Sparkles,
+  Gauge,
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -36,12 +39,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Tooltip,
   TooltipContent,
@@ -49,185 +52,262 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-
+import {
+  AiAgentDetailSheet,
+  AGENT_KIND_COLORS,
+  STATUS_STYLES,
+} from '@/components/system-admin/ai-agent-detail-sheet'
 import { MOCK_AI_AGENTS, type AgentKind, type AgentStatus } from '@/lib/config-mock-data'
 
-const AGENT_KIND_COLORS: Record<AgentKind, string> = {
-  'Classification': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'Impact Analysis': 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
-  'Test Generation': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  'Test Execution': 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-  'Test Data': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  'Healing': 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
-  'Defect Triage': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'Reporting': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  'Audit Pack Composer': 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400',
-  'KB Curation': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
-}
-
-const STATUS_CONFIG: Record<AgentStatus, { icon: React.ElementType; className: string }> = {
-  'Active': { icon: CheckCircle2, className: 'text-emerald-600 dark:text-emerald-400' },
-  'Disabled': { icon: XCircle, className: 'text-muted-foreground' },
-  'Maintenance': { icon: Wrench, className: 'text-amber-600 dark:text-amber-400' },
+const STATUS_CONFIG: Record<AgentStatus, { icon: React.ElementType }> = {
+  Active: { icon: CheckCircle2 },
+  Disabled: { icon: XCircle },
+  Maintenance: { icon: Wrench },
 }
 
 export default function AIAgentsPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
-  const [selectedAgent, setSelectedAgent] = React.useState<typeof MOCK_AI_AGENTS[0] | null>(null)
-  
-  const filteredAgents = MOCK_AI_AGENTS.filter(agent => 
-    agent.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    agent.agent_kind.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const [kindFilter, setKindFilter] = React.useState<string>('all')
+  const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [selectedAgent, setSelectedAgent] = React.useState<(typeof MOCK_AI_AGENTS)[0] | null>(null)
 
-  // Mock thresholds for drawer
-  const mockThresholds = [
-    { task_type: 'defect_classification', threshold: 0.85 },
-    { task_type: 'failure_classification', threshold: 0.80 },
-    { task_type: 'severity_prediction', threshold: 0.90 },
-  ]
+  const activeCount = MOCK_AI_AGENTS.filter((a) => a.status === 'Active').length
+  const totalTasks24h = MOCK_AI_AGENTS.reduce((sum, a) => sum + a.recent_tasks_24h, 0)
+  const kindCount = new Set(MOCK_AI_AGENTS.map((a) => a.agent_kind)).size
+
+  const filteredAgents = MOCK_AI_AGENTS.filter((agent) => {
+    const matchesSearch =
+      agent.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agent.agent_kind.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesKind = kindFilter === 'all' || agent.agent_kind === kindFilter
+    const matchesStatus = statusFilter === 'all' || agent.status === statusFilter
+    return matchesSearch && matchesKind && matchesStatus
+  })
+
+  const hasActiveFilters =
+    searchQuery.length > 0 || kindFilter !== 'all' || statusFilter !== 'all'
+
+  const agentKinds = [...new Set(MOCK_AI_AGENTS.map((a) => a.agent_kind))] as AgentKind[]
 
   return (
     <AppShell currentApp="system-admin">
       <div className="flex flex-col h-full">
-        {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <h1 className="page-title">AI Agents</h1>
                 <p className="page-description mt-1 max-w-2xl">
-                  Voltus AI Agents with capability scopes and Service Role bindings. Each agent has a verifiable identity (DID) for audit.
+                  Voltus AI agents with capability scopes and service role bindings. Each agent has
+                  a verifiable identity (DID) for audit.
                 </p>
               </div>
             </div>
-            
-            {/* Search */}
-            <div className="flex items-center gap-3 mt-4">
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard label="Total Agents" value={MOCK_AI_AGENTS.length} icon={Bot} tone="brand" />
+              <KpiStatCard label="Active" value={activeCount} icon={Sparkles} tone="success" />
+              <KpiStatCard label="Tasks (24h)" value={totalTasks24h} icon={Activity} tone="info" />
+              <KpiStatCard label="Agent Kinds" value={kindCount} icon={Gauge} tone="neutral" />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search agents..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-9"
                 />
               </div>
+
+              <Select value={kindFilter} onValueChange={setKindFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] h-9">
+                  <SelectValue placeholder="Agent Kind" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Kinds</SelectItem>
+                  {agentKinds.map((kind) => (
+                    <SelectItem key={kind} value={kind}>
+                      {kind}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px] h-9">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Disabled">Disabled</SelectItem>
+                  <SelectItem value="Maintenance">Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
-        
-        {/* Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="border rounded-lg overflow-hidden">
+
+        <div className="flex-1 overflow-auto px-4 md:px-6 py-4 md:py-6 space-y-3">
+          <div className="rounded-xl border border-blue-500/25 bg-blue-500/[0.05] px-4 py-3 flex items-start gap-3">
+            <Bot className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Agents are assigned via service roles and pairing rules. Thresholds control
+              auto-promotion confidence for AI-driven decisions.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+            <span>
+              Showing{' '}
+              <span className="font-medium text-foreground tabular-nums">{filteredAgents.length}</span>{' '}
+              of{' '}
+              <span className="font-medium text-foreground tabular-nums">
+                {MOCK_AI_AGENTS.length}
+              </span>{' '}
+              agents
+            </span>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('')
+                  setKindFilter('all')
+                  setStatusFilter('all')
+                }}
+                className="text-xs text-brand hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
+          <div className="border rounded-xl overflow-hidden bg-card shadow-[var(--shadow-xs)]">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Display Name</TableHead>
-                  <TableHead>Agent Kind</TableHead>
-                  <TableHead>DID</TableHead>
-                  <TableHead>Capability Scopes</TableHead>
-                  <TableHead>Assignable Roles</TableHead>
-                  <TableHead>Thresholds</TableHead>
-                  <TableHead>Recent (24h)</TableHead>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                  <TableHead>Agent</TableHead>
+                  <TableHead className="hidden sm:table-cell">Kind</TableHead>
+                  <TableHead className="hidden lg:table-cell">DID</TableHead>
+                  <TableHead className="hidden md:table-cell">Scopes</TableHead>
+                  <TableHead className="hidden lg:table-cell">Tasks (24h)</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
+                  <TableHead className="w-[52px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAgents.map((agent) => {
                   const StatusIcon = STATUS_CONFIG[agent.status].icon
-                  
+                  const isSelected = selectedAgent?.id === agent.id
+
                   return (
-                    <TableRow key={agent.id}>
+                    <TableRow
+                      key={agent.id}
+                      className={cn(
+                        'cursor-pointer group transition-colors',
+                        isSelected && 'bg-brand/[0.06] hover:bg-brand/[0.08]',
+                      )}
+                      onClick={() => setSelectedAgent(agent)}
+                    >
                       <TableCell>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger className="flex items-center gap-2 font-medium">
-                              <Bot className="h-4 w-4 text-muted-foreground" />
-                              {agent.display_name}
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Voltus AI Agent</p>
-                              <p className="caption-text">
-                                Capabilities: {agent.capability_scopes.join(', ')}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                            <Bot className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-sm truncate">{agent.display_name}</p>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all hidden sm:block shrink-0" />
+                            </div>
+                            <p className="caption-text sm:hidden">{agent.agent_kind}</p>
+                          </div>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={cn('font-normal', AGENT_KIND_COLORS[agent.agent_kind])}>
+
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge
+                          variant="outline"
+                          className={cn('h-6 text-[10px] border', AGENT_KIND_COLORS[agent.agent_kind])}
+                        >
                           {agent.agent_kind}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs bg-muted px-2 py-1 rounded font-mono truncate max-w-[120px]">
+
+                      <TableCell className="hidden lg:table-cell max-w-[160px]">
+                        <div className="flex items-center gap-1">
+                          <code className="text-[10px] bg-muted/50 px-2 py-1 rounded font-mono truncate">
                             {agent.did}
                           </code>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-6 w-6"
-                            onClick={() => navigator.clipboard.writeText(agent.did)}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 opacity-60 group-hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigator.clipboard.writeText(agent.did)
+                            }}
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1 max-w-[150px]">
+
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-wrap gap-1 max-w-[180px]">
                           {agent.capability_scopes.slice(0, 2).map((scope) => (
-                            <Badge key={scope} variant="outline" className="text-xs font-mono">
+                            <Badge
+                              key={scope}
+                              variant="outline"
+                              className="text-[10px] font-mono h-5 bg-muted/30"
+                            >
                               {scope}
                             </Badge>
                           ))}
                           {agent.capability_scopes.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="secondary" className="text-[10px] h-5 tabular-nums">
                               +{agent.capability_scopes.length - 2}
                             </Badge>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {agent.assignable_roles.map((role) => (
-                            <Badge key={role} variant="secondary" className="text-xs font-mono">
-                              {role}
-                            </Badge>
-                          ))}
-                        </div>
+
+                      <TableCell className="hidden lg:table-cell">
+                        <span className="text-sm font-medium tabular-nums">{agent.recent_tasks_24h}</span>
                       </TableCell>
+
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-auto py-1 px-2"
-                          onClick={() => setSelectedAgent(agent)}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'h-6 gap-1 text-[10px] border',
+                            STATUS_STYLES[agent.status],
+                          )}
                         >
-                          {agent.threshold_count} configured
-                        </Button>
+                          <StatusIcon className="h-3 w-3" />
+                          {agent.status}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        <span className="font-medium">{agent.recent_tasks_24h}</span>
-                        <span className="text-muted-foreground"> tasks</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className={cn('flex items-center gap-1.5', STATUS_CONFIG[agent.status].className)}>
-                          <StatusIcon className="h-4 w-4" />
-                          <span className="text-sm">{agent.status}</span>
-                        </div>
-                      </TableCell>
+
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-60 group-hover:opacity-100"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => setSelectedAgent(agent)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
                               <Settings className="h-4 w-4 mr-2" />
                               Configure Thresholds
                             </DropdownMenuItem>
@@ -236,7 +316,7 @@ export default function AIAgentsPage() {
                               View Activity
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-amber-600">
+                            <DropdownMenuItem className="text-amber-600 dark:text-amber-400">
                               <Power className="h-4 w-4 mr-2" />
                               {agent.status === 'Active' ? 'Disable' : 'Enable'}
                             </DropdownMenuItem>
@@ -249,79 +329,35 @@ export default function AIAgentsPage() {
               </TableBody>
             </Table>
           </div>
-          
+
           {filteredAgents.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Bot className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed border-border bg-muted/10">
+              <Bot className="h-12 w-12 text-muted-foreground/40 mb-4" />
               <h3 className="font-semibold text-lg">No agents found</h3>
-              <p className="page-description mt-1">
-                Try adjusting your search
-              </p>
+              <p className="page-description mt-1">Try adjusting your search or filters.</p>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setKindFilter('all')
+                    setStatusFilter('all')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
             </div>
           )}
         </div>
-        
-        {/* Thresholds Drawer */}
-        <Sheet open={!!selectedAgent} onOpenChange={() => setSelectedAgent(null)}>
-          <SheetContent className="w-[400px] sm:w-[540px]">
-            {selectedAgent && (
-              <>
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5" />
-                    {selectedAgent.display_name}
-                  </SheetTitle>
-                  <SheetDescription>
-                    <Badge className={cn('font-normal', AGENT_KIND_COLORS[selectedAgent.agent_kind])}>
-                      {selectedAgent.agent_kind}
-                    </Badge>
-                  </SheetDescription>
-                </SheetHeader>
-                
-                <div className="mt-6 space-y-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">Confidence Thresholds</h4>
-                    <div className="space-y-3">
-                      {mockThresholds.map((threshold) => (
-                        <div key={threshold.task_type} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <p className="font-mono text-sm">{threshold.task_type}</p>
-                          </div>
-                          <Badge variant="outline" className="font-mono">
-                            {(threshold.threshold * 100).toFixed(0)}%
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">Capability Scopes</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedAgent.capability_scopes.map((scope) => (
-                        <Badge key={scope} variant="outline" className="font-mono">
-                          {scope}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-3">DID (Verifiable Identity)</h4>
-                    <code className="text-xs bg-muted px-3 py-2 rounded block font-mono break-all">
-                      {selectedAgent.did}
-                    </code>
-                  </div>
-                  
-                  <Button className="w-full">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure Thresholds
-                  </Button>
-                </div>
-              </>
-            )}
-          </SheetContent>
-        </Sheet>
+
+        <AiAgentDetailSheet
+          agent={selectedAgent}
+          open={!!selectedAgent}
+          onOpenChange={(open) => !open && setSelectedAgent(null)}
+        />
       </div>
     </AppShell>
   )

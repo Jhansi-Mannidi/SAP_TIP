@@ -848,16 +848,16 @@
   }
 
   .page-description {
-    @apply text-sm text-muted-foreground leading-relaxed max-w-2xl;
+    @apply text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl;
   }
 
   .section-title {
-    @apply text-lg font-semibold leading-snug tracking-tight text-foreground;
+    @apply text-base sm:text-lg font-semibold leading-snug tracking-tight text-foreground;
     font-family: var(--font-display);
   }
 
   .section-description {
-    @apply text-sm text-muted-foreground leading-relaxed;
+    @apply text-xs text-muted-foreground leading-relaxed;
   }
 
   .card-title-text {
@@ -871,6 +871,59 @@
 
   .caption-text {
     @apply text-xs text-muted-foreground leading-normal;
+  }
+
+  /* In-page breadcrumb — single horizontal line, compact */
+  .page-breadcrumb {
+    @apply min-w-0 max-w-full;
+  }
+
+  .page-breadcrumb-list {
+    @apply flex flex-row flex-nowrap items-center gap-0 list-none m-0 p-0 min-w-0 max-w-full;
+    font-size: 11px;
+    line-height: 1.25;
+    color: var(--muted-foreground);
+  }
+
+  .page-breadcrumb-item {
+    @apply inline-flex items-center min-w-0 shrink-0;
+  }
+
+  .page-breadcrumb-item--truncate {
+    @apply shrink min-w-0 max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem];
+  }
+
+  .page-breadcrumb-sep {
+    @apply size-3 shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
+  }
+
+  .page-breadcrumb-link {
+    @apply truncate text-muted-foreground hover:text-foreground transition-colors;
+  }
+
+  .page-breadcrumb-current {
+    @apply truncate font-medium text-foreground;
+  }
+
+  /* Legacy markup: div + Link + ChevronRight — hide icons, force one row */
+  .page-breadcrumb:not(:has(.page-breadcrumb-list)) {
+    @apply flex flex-row flex-nowrap items-center min-w-0 max-w-full overflow-hidden;
+    font-size: 11px;
+    line-height: 1.25;
+    color: var(--muted-foreground);
+  }
+
+  .page-breadcrumb:not(:has(.page-breadcrumb-list)) > svg {
+    @apply size-3 shrink-0 text-muted-foreground/45 mx-0.5 pointer-events-none;
+  }
+
+  .page-breadcrumb:not(:has(.page-breadcrumb-list)) a {
+    @apply truncate hover:text-foreground transition-colors shrink min-w-0 max-w-[8rem] sm:max-w-[12rem] md:max-w-[16rem];
+  }
+
+  .page-breadcrumb:not(:has(.page-breadcrumb-list)) > span:last-child,
+  .page-breadcrumb:not(:has(.page-breadcrumb-list)) [data-breadcrumb-current] {
+    @apply font-medium text-foreground shrink-0;
   }
 
   /* Uppercase micro-labels (KPI labels, section headers) */

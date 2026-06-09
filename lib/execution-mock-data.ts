@@ -2,6 +2,8 @@
 // TEST EXECUTION MOCK DATA
 // ============================================================================
 
+import { SUPPLEMENTAL_ACTIVE_RUNS, SUPPLEMENTAL_PAST_RUNS } from './mock-data-supplement'
+
 export type ExecutionState = 'Pending' | 'InProgress' | 'Paused' | 'Completed' | 'Failed' | 'Aborted'
 export type CaseState = 'ToDo' | 'InProgress' | 'Passed' | 'Healed' | 'Failed' | 'Skipped' | 'Defected'
 
@@ -104,6 +106,7 @@ export const MOCK_ACTIVE_RUNS: ActiveRun[] = [
     elapsed_mins: 30,
     triggered_by: 'S.Kumar',
   },
+  ...SUPPLEMENTAL_ACTIVE_RUNS,
 ]
 
 // Scheduled Runs
@@ -518,6 +521,7 @@ export const MOCK_PAST_RUNS: PastRun[] = [
   { id: 'pr_13', type: 'suite', name: 'Cutover Dry Run 1', code: 'CUT_DRY_1', target_system: { sid: 'PRE', client: '100' }, state: 'Completed', started_at: '2026-04-25T06:00:00+05:30', completed_at: '2026-04-25T10:30:00+05:30', duration_mins: 270, case_counts: { total: 312, pass: 285, healed: 15, fail: 12 }, pass_rate: 91.3, healing_events: 15, defects_raised: 6, triggered_by: 'P.Sharma' },
   { id: 'pr_14', type: 'suite', name: 'Integration Test', code: 'INT_TEST', target_system: { sid: 'Q01', client: '200' }, state: 'Completed', started_at: '2026-04-22T09:00:00+05:30', completed_at: '2026-04-22T12:00:00+05:30', duration_mins: 180, case_counts: { total: 280, pass: 265, healed: 10, fail: 5 }, pass_rate: 94.6, healing_events: 10, defects_raised: 3, triggered_by: 'M.Reddy' },
   { id: 'pr_15', type: 'suite', name: 'Hypercare Smoke', code: 'HC_SMOKE', target_system: { sid: 'P01', client: '100' }, state: 'Completed', started_at: '2026-04-20T02:00:00+05:30', completed_at: '2026-04-20T02:30:00+05:30', duration_mins: 30, case_counts: { total: 45, pass: 45, healed: 0, fail: 0 }, pass_rate: 100, healing_events: 0, defects_raised: 0, triggered_by: 'Scheduled' },
+  ...SUPPLEMENTAL_PAST_RUNS,
 ]
 
 // Replay Surface data

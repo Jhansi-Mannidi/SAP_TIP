@@ -22,19 +22,15 @@ import {
   Globe,
   Building2,
   FolderOpen,
-  X,
   Search,
-  Loader2,
 } from 'lucide-react'
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
 import { EntityCodeLink } from '@/components/entity-code-link'
 import { StatusBadge } from '@/components/status-badge'
 import { AgentTaskIndicator } from '@/components/agent-task-indicator'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
@@ -51,19 +47,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from '@/components/ui/sheet'
 import { NewScenarioSheet } from '@/components/new-scenario-sheet'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
+import { ScenarioGenerateIntentSheet } from '@/components/test-repository/scenario-generate-intent-sheet'
+import {
+  ScenarioFilterSheet,
+  countScenarioAdvancedFilters,
+  type ScenarioAdvancedFilters,
+  EMPTY_SCENARIO_FILTERS,
+} from '@/components/test-repository/scenario-filter-sheet'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -74,7 +65,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { MOCK_TEST_SCENARIOS, type ScenarioState, type CustomerScope } from '@/lib/mock-data'
+import { MOCK_TEST_SCENARIOS, type CustomerScope } from '@/lib/mock-data'
 
 // Filter chip type
 type FilterChip = {
@@ -194,122 +185,6 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-// AI Generation Sheet content — slides in from the right
-function AIGenerationSheet({ onClose }: { onClose: () => void }) {
-  const [intent, setIntent] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-
-  const handleGenerate = () => {
-    setIsGenerating(true)
-    // Simulate generation
-    setTimeout(() => {
-      setIsGenerating(false)
-      setIntent('')
-      onClose()
-    }, 2000)
-  }
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <SheetHeader className="border-b border-border px-5 sm:px-6 py-4 space-y-1.5 text-left">
-        <SheetTitle className="flex items-center gap-2.5 text-base font-semibold">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-brand-foreground shadow-sm shrink-0">
-            <Sparkles className="h-4 w-4" />
-          </span>
-          Generate Scenario from Intent
-        </SheetTitle>
-        <SheetDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          Describe what you want to test in natural language. Voltus AI Agent will generate a
-          complete test scenario draft for your review.
-        </SheetDescription>
-      </SheetHeader>
-
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="intent" className="text-xs font-medium">
-            Test Intent
-          </Label>
-          <Textarea
-            id="intent"
-            placeholder="e.g. 'Sales order with credit hold and manual release for vendor in Germany'"
-            value={intent}
-            onChange={(e) => setIntent(e.target.value)}
-            className="min-h-[140px] resize-none text-sm"
-          />
-          <p className="page-description text-[11px]">
-            Be specific about the business process, master data, and any edge cases you want
-            covered.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-border bg-muted/40 p-4">
-          <div className="flex items-start gap-2.5">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-soft/60 text-brand shrink-0">
-              <Sparkles className="h-3.5 w-3.5" />
-            </span>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground">Voltus AI Agent will:</p>
-              <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground leading-relaxed">
-                <li className="flex gap-2">
-                  <span className="text-brand mt-1.5 h-1 w-1 rounded-full bg-brand shrink-0" />
-                  <span>Analyze your intent and identify relevant SAP transactions</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-brand mt-1.5 h-1 w-1 rounded-full bg-brand shrink-0" />
-                  <span>Generate test tasks with appropriate data dependencies</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-brand mt-1.5 h-1 w-1 rounded-full bg-brand shrink-0" />
-                  <span>Create the Scenario in Draft state for your review</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-brand mt-1.5 h-1 w-1 rounded-full bg-brand shrink-0" />
-                  <span>Suggest test data sets based on your system configuration</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2 rounded-md border border-brand/30 bg-brand-soft/40 px-3 py-2.5">
-          <AlertCircle className="h-3.5 w-3.5 text-brand mt-0.5 shrink-0" />
-          <p className="text-[11px] text-foreground/80 leading-relaxed">
-            <span className="font-semibold text-foreground">Draft only.</span>{' '}
-            Generated scenarios require review and approval before they can be published.
-          </p>
-        </div>
-      </div>
-
-      {/* Sticky footer */}
-      <div className="border-t border-border px-5 sm:px-6 py-3.5 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 bg-background">
-        <Button variant="outline" size="sm" onClick={onClose} className="h-9">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleGenerate}
-          disabled={!intent.trim() || isGenerating}
-          size="sm"
-          className="h-9 gap-1.5"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Generating…
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-3.5 w-3.5" />
-              Generate Scenario
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 export default function TestScenariosListPage() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -318,61 +193,64 @@ export default function TestScenariosListPage() {
   const [hasWritePermission] = useState(true)
   const [isAIGenOpen, setIsAIGenOpen] = useState(false)
   const [isNewScenarioOpen, setIsNewScenarioOpen] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   // Advanced filter state
-  const [advancedFilters, setAdvancedFilters] = useState({
-    states: [] as ScenarioState[],
-    modules: [] as string[],
-    businessProcesses: [] as string[],
-    customerScopes: [] as CustomerScope[],
-    tags: [] as string[],
-  })
+  const [advancedFilters, setAdvancedFilters] = useState<ScenarioAdvancedFilters>(EMPTY_SCENARIO_FILTERS)
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
   
+  const applyScenarioFilters = React.useCallback(
+    (filters: ScenarioAdvancedFilters, chipId: string, query: string) => {
+      let result = [...MOCK_TEST_SCENARIOS]
+
+      const chipFilter = savedFilterChips.find((c) => c.id === chipId)
+      if (chipFilter) {
+        result = result.filter(chipFilter.filter)
+      }
+
+      if (filters.states.length > 0) {
+        result = result.filter((s) => filters.states.includes(s.state))
+      }
+      if (filters.modules.length > 0) {
+        result = result.filter((s) => s.modules.some((m) => filters.modules.includes(m)))
+      }
+      if (filters.businessProcesses.length > 0) {
+        result = result.filter((s) => filters.businessProcesses.includes(s.business_process))
+      }
+      if (filters.customerScopes.length > 0) {
+        result = result.filter((s) => filters.customerScopes.includes(s.customer_scope))
+      }
+      if (filters.tags.length > 0) {
+        result = result.filter((s) => s.tags.some((t) => filters.tags.includes(t)))
+      }
+
+      if (query) {
+        const q = query.toLowerCase()
+        result = result.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            s.code.toLowerCase().includes(q) ||
+            s.modules.some((m) => m.toLowerCase().includes(q)) ||
+            s.business_process.toLowerCase().includes(q) ||
+            s.tags.some((t) => t.toLowerCase().includes(q)),
+        )
+      }
+
+      return result
+    },
+    [],
+  )
+
   // Filtered and searched scenarios
-  const filteredScenarios = useMemo(() => {
-    let result = [...MOCK_TEST_SCENARIOS]
-    
-    // Apply saved filter chip
-    const chipFilter = savedFilterChips.find(c => c.id === activeFilter)
-    if (chipFilter) {
-      result = result.filter(chipFilter.filter)
-    }
-    
-    // Apply advanced filters
-    if (advancedFilters.states.length > 0) {
-      result = result.filter(s => advancedFilters.states.includes(s.state))
-    }
-    if (advancedFilters.modules.length > 0) {
-      result = result.filter(s => s.modules.some(m => advancedFilters.modules.includes(m)))
-    }
-    if (advancedFilters.businessProcesses.length > 0) {
-      result = result.filter(s => advancedFilters.businessProcesses.includes(s.business_process))
-    }
-    if (advancedFilters.customerScopes.length > 0) {
-      result = result.filter(s => advancedFilters.customerScopes.includes(s.customer_scope))
-    }
-    if (advancedFilters.tags.length > 0) {
-      result = result.filter(s => s.tags.some(t => advancedFilters.tags.includes(t)))
-    }
-    
-    // Apply search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(s =>
-        s.name.toLowerCase().includes(query) ||
-        s.code.toLowerCase().includes(query) ||
-        s.modules.some(m => m.toLowerCase().includes(query)) ||
-        s.business_process.toLowerCase().includes(query) ||
-        s.tags.some(t => t.toLowerCase().includes(query))
-      )
-    }
-    
-    return result
-  }, [activeFilter, advancedFilters, searchQuery])
+  const filteredScenarios = useMemo(
+    () => applyScenarioFilters(advancedFilters, activeFilter, searchQuery),
+    [applyScenarioFilters, advancedFilters, activeFilter, searchQuery],
+  )
+
+  const advancedFilterCount = countScenarioAdvancedFilters(advancedFilters)
   
   // Paginated results
   const paginatedScenarios = useMemo(() => {
@@ -396,15 +274,13 @@ export default function TestScenariosListPage() {
   
   const clearAllFilters = () => {
     setActiveFilter('all')
-    setAdvancedFilters({ states: [], modules: [], businessProcesses: [], customerScopes: [], tags: [] })
+    setAdvancedFilters(EMPTY_SCENARIO_FILTERS)
     setSearchQuery('')
   }
   
   // Available filter options
   const allModules = Array.from(new Set(MOCK_TEST_SCENARIOS.flatMap(s => s.modules)))
   const allBPs = Array.from(new Set(MOCK_TEST_SCENARIOS.map(s => s.business_process)))
-  const allStates: ScenarioState[] = ['Draft', 'Published', 'Deprecated', 'Archived']
-  const allScopes: CustomerScope[] = ['Global', 'Customer', 'Workspace']
   const allTags = Array.from(new Set(MOCK_TEST_SCENARIOS.flatMap(s => s.tags)))
 
   return (
@@ -429,14 +305,10 @@ export default function TestScenariosListPage() {
                 <Sparkles className="h-4 w-4 text-brand" />
                 Generate from Intent
               </Button>
-              <Sheet open={isAIGenOpen} onOpenChange={setIsAIGenOpen}>
-                <SheetContent
-                  side="right"
-                  className="w-full sm:max-w-md p-0 flex flex-col"
-                >
-                  <AIGenerationSheet onClose={() => setIsAIGenOpen(false)} />
-                </SheetContent>
-              </Sheet>
+              <ScenarioGenerateIntentSheet
+                open={isAIGenOpen}
+                onOpenChange={setIsAIGenOpen}
+              />
               {hasWritePermission && (
                 <Button size="sm" onClick={() => setIsNewScenarioOpen(true)}>
                   <Plus className="h-4 w-4 mr-1.5" />
@@ -462,177 +334,36 @@ export default function TestScenariosListPage() {
             
             <Separator orientation="vertical" className="h-6 mx-1" />
             
-            {/* Advanced Filter Sheet */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  <Filter className="h-3 w-3 mr-1.5" />
-                  Filter
-                  {(advancedFilters.states.length > 0 || advancedFilters.modules.length > 0 || advancedFilters.businessProcesses.length > 0 || advancedFilters.customerScopes.length > 0 || advancedFilters.tags.length > 0) && (
-                    <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
-                      {advancedFilters.states.length + advancedFilters.modules.length + advancedFilters.businessProcesses.length + advancedFilters.customerScopes.length + advancedFilters.tags.length}
-                    </Badge>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Filter Test Scenarios</SheetTitle>
-                  <SheetDescription>
-                    Apply advanced filters to narrow down the scenario list.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-6 space-y-6">
-                  {/* State Filter */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">State</Label>
-                    <div className="space-y-2">
-                      {allStates.map((state) => (
-                        <div key={state} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`state-${state}`}
-                            checked={advancedFilters.states.includes(state)}
-                            onCheckedChange={(checked) => {
-                              setAdvancedFilters(prev => ({
-                                ...prev,
-                                states: checked
-                                  ? [...prev.states, state]
-                                  : prev.states.filter(s => s !== state)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`state-${state}`} className="text-sm font-normal cursor-pointer">
-                            {state}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Business Process Filter */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Business Process</Label>
-                    <StaggerGrid columns="grid-cols-2" className="gap-2" fast>
-                      {allBPs.map((bp) => (
-                        <div key={bp} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`bp-${bp}`}
-                            checked={advancedFilters.businessProcesses.includes(bp)}
-                            onCheckedChange={(checked) => {
-                              setAdvancedFilters(prev => ({
-                                ...prev,
-                                businessProcesses: checked
-                                  ? [...prev.businessProcesses, bp]
-                                  : prev.businessProcesses.filter(b => b !== bp)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`bp-${bp}`} className="text-sm font-normal cursor-pointer">
-                            {bp}
-                          </Label>
-                        </div>
-                      ))}
-                    </StaggerGrid>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Module Filter */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">SAP Modules</Label>
-                    <StaggerGrid columns="grid-cols-2" className="gap-2" fast>
-                      {allModules.map((mod) => (
-                        <div key={mod} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`mod-${mod}`}
-                            checked={advancedFilters.modules.includes(mod)}
-                            onCheckedChange={(checked) => {
-                              setAdvancedFilters(prev => ({
-                                ...prev,
-                                modules: checked
-                                  ? [...prev.modules, mod]
-                                  : prev.modules.filter(m => m !== mod)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`mod-${mod}`} className="text-sm font-normal cursor-pointer font-mono">
-                            {mod}
-                          </Label>
-                        </div>
-                      ))}
-                    </StaggerGrid>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Customer Scope Filter */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Customer Scope</Label>
-                    <div className="space-y-2">
-                      {allScopes.map((scope) => (
-                        <div key={scope} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`scope-${scope}`}
-                            checked={advancedFilters.customerScopes.includes(scope)}
-                            onCheckedChange={(checked) => {
-                              setAdvancedFilters(prev => ({
-                                ...prev,
-                                customerScopes: checked
-                                  ? [...prev.customerScopes, scope]
-                                  : prev.customerScopes.filter(s => s !== scope)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`scope-${scope}`} className="text-sm font-normal cursor-pointer">
-                            {scope}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Tags Filter */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Tags</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {allTags.slice(0, 12).map((tag) => (
-                        <Button
-                          key={tag}
-                          variant={advancedFilters.tags.includes(tag) ? 'default' : 'outline'}
-                          size="sm"
-                          className="h-6 text-xs"
-                          onClick={() => {
-                            setAdvancedFilters(prev => ({
-                              ...prev,
-                              tags: prev.tags.includes(tag)
-                                ? prev.tags.filter(t => t !== tag)
-                                : [...prev.tags, tag]
-                            }))
-                          }}
-                        >
-                          {tag}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <SheetFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAdvancedFilters({ states: [], modules: [], businessProcesses: [], customerScopes: [], tags: [] })}
-                  >
-                    Clear All
-                  </Button>
-                  <SheetClose asChild>
-                    <Button>Apply Filters</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'h-7 text-xs gap-1.5',
+                advancedFilterCount > 0 && 'border-brand/40 bg-brand/[0.06]',
+              )}
+              onClick={() => setIsFilterOpen(true)}
+            >
+              <Filter className="h-3 w-3" />
+              Filter
+              {advancedFilterCount > 0 && (
+                <Badge className="ml-0.5 h-4 px-1 text-[10px] bg-brand text-brand-foreground border-0">
+                  {advancedFilterCount}
+                </Badge>
+              )}
+            </Button>
+
+            <ScenarioFilterSheet
+              open={isFilterOpen}
+              onOpenChange={setIsFilterOpen}
+              filters={advancedFilters}
+              onFiltersChange={setAdvancedFilters}
+              allModules={allModules}
+              allBusinessProcesses={allBPs}
+              allTags={allTags}
+              matchCount={filteredScenarios.length}
+              totalCount={MOCK_TEST_SCENARIOS.length}
+              countMatches={(f) => applyScenarioFilters(f, activeFilter, searchQuery).length}
+            />
             
             {/* Search */}
             <div className="ml-auto relative">

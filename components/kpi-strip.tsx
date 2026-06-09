@@ -22,9 +22,10 @@ interface KPIStripProps {
   kpis: KPI[]
   className?: string
   animated?: boolean
+  variant?: 'card' | 'flat'
 }
 
-export function KPIStrip({ kpis, className, animated = true }: KPIStripProps) {
+export function KPIStrip({ kpis, className, animated = true, variant = 'card' }: KPIStripProps) {
   const Wrapper = animated ? motion.div : 'div'
   const wrapperProps = animated
     ? {
@@ -37,25 +38,37 @@ export function KPIStrip({ kpis, className, animated = true }: KPIStripProps) {
   return (
     <Wrapper
       className={cn(
-        'flex items-stretch gap-4 p-5 sm:p-6 bg-card border border-border rounded-xl overflow-x-auto',
-        'shadow-[var(--shadow-xs)]',
+        'flex items-stretch gap-4 overflow-x-auto',
+        variant === 'card' && 'p-5 sm:p-6 bg-card border border-border rounded-xl shadow-[var(--shadow-xs)]',
+        variant === 'flat' && 'gap-0 divide-x divide-border/60',
         className,
       )}
       {...wrapperProps}
     >
       {kpis.map((kpi, index) => (
-        <React.Fragment key={kpi.id}>
-          <KPITile kpi={kpi} animated={animated} />
-          {index < kpis.length - 1 && (
-            <div className="w-px bg-border flex-shrink-0" />
-          )}
-        </React.Fragment>
+        <KPITile
+          key={kpi.id}
+          kpi={kpi}
+          animated={animated}
+          flat={variant === 'flat'}
+          isFirst={index === 0}
+        />
       ))}
     </Wrapper>
   )
 }
 
-function KPITile({ kpi, animated }: { kpi: KPI; animated: boolean }) {
+function KPITile({
+  kpi,
+  animated,
+  flat = false,
+  isFirst = false,
+}: {
+  kpi: KPI
+  animated: boolean
+  flat?: boolean
+  isFirst?: boolean
+}) {
   const TrendIcon = kpi.trend === 'up' ? TrendingUp : kpi.trend === 'down' ? TrendingDown : Minus
 
   const trendColor = {
@@ -104,19 +117,21 @@ function KPITile({ kpi, animated }: { kpi: KPI; animated: boolean }) {
     </>
   )
 
+  const tileClass = cn(
+    'flex flex-col gap-1.5 min-w-[120px] sm:min-w-[140px] flex-1 flex-shrink-0',
+    flat && 'px-4 sm:px-5 py-1',
+    flat && !isFirst && 'pl-4 sm:pl-5',
+  )
+
   if (!animated) {
-    return (
-      <div className="flex flex-col gap-1.5 min-w-[140px] flex-shrink-0">
-        {content}
-      </div>
-    )
+    return <div className={tileClass}>{content}</div>
   }
 
   return (
     <motion.div
-      className="flex flex-col gap-1.5 min-w-[140px] flex-shrink-0"
+      className={tileClass}
       variants={staggerItem}
-      whileHover={{ y: -1, transition: { duration: 0.15 } }}
+      whileHover={flat ? undefined : { y: -1, transition: { duration: 0.15 } }}
     >
       {content}
     </motion.div>

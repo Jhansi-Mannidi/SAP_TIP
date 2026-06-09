@@ -130,7 +130,7 @@ export default function SystemDetailPage() {
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <div className="page-breadcrumb mb-4">
               <Link href="/system-admin" className="hover:text-foreground flex items-center gap-1">
                 <ArrowLeft className="h-4 w-4" />
                 SAP Systems

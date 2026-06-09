@@ -1945,6 +1945,10 @@ export const MOCK_SNAPSHOTS: MasterDataSnapshot[] = [
   },
 ]
 
+export function getSnapshotById(id: string): MasterDataSnapshot | undefined {
+  return MOCK_SNAPSHOTS.find((s) => s.id === id)
+}
+
 // ============================================================================
 // TEST PACKS (Distributable Test Content)
 // ============================================================================
@@ -2064,6 +2068,50 @@ export const MOCK_TEST_PACKS: TestPack[] = [
     tags: ['otc', 'accelerator', 'partner', 'northstar'],
   },
 ]
+
+export function getTestPackById(id: string): TestPack | undefined {
+  return MOCK_TEST_PACKS.find((p) => p.id === id)
+}
+
+export interface TestPackContentItem {
+  id: string
+  type: 'suite' | 'scenario' | 'case' | 'fixture'
+  code: string
+  name: string
+  module?: string
+}
+
+export function getTestPackContents(pack: TestPack): TestPackContentItem[] {
+  const items: TestPackContentItem[] = []
+  const modules = ['SD', 'MM', 'FI', 'PP', 'QM']
+  for (let i = 0; i < pack.contents.suites; i++) {
+    items.push({
+      id: `${pack.id}_sui_${i + 1}`,
+      type: 'suite',
+      code: `SUI-${pack.id.slice(-1)}${i + 1}`,
+      name: `${pack.name.split(' ')[0]} Suite ${i + 1}`,
+      module: modules[i % modules.length],
+    })
+  }
+  for (let i = 0; i < Math.min(pack.contents.scenarios, 8); i++) {
+    items.push({
+      id: `${pack.id}_scn_${i + 1}`,
+      type: 'scenario',
+      code: `SCN-${100 + i}`,
+      name: `Scenario ${i + 1}: ${pack.tags[i % pack.tags.length] ?? 'core'} flow`,
+      module: modules[i % modules.length],
+    })
+  }
+  for (let i = 0; i < Math.min(pack.contents.fixtures, 5); i++) {
+    items.push({
+      id: `${pack.id}_fix_${i + 1}`,
+      type: 'fixture',
+      code: `FIX-${pack.tags[0]?.toUpperCase().slice(0, 4) ?? 'DATA'}_${i + 1}`,
+      name: `Fixture set ${i + 1}`,
+    })
+  }
+  return items
+}
 
 // ============================================================================
 // IMPORTED TEST PACKS (From external sources)
@@ -2756,6 +2804,194 @@ export const MOCK_REPOSITORY_AUDIT: RepositoryAuditEvent[] = [
   { id: 'ra_29', timestamp: '2026-04-08T15:00:00+05:30', actor: { id: 'u_3', name: 'M.Reddy', email: 'm.reddy@starcement.com', role: 'Test Engineer' }, entityClass: 'Case', entityId: 'tc_25', entityName: 'Verify Tax Calculation', action: 'status_changed', fieldChanged: 'state', oldValue: 'Active', newValue: 'Deprecated', signatureStatus: 'signed' },
   { id: 'ra_30', timestamp: '2026-04-08T08:45:00+05:30', actor: { id: 'u_2', name: 'J.Rao', email: 'j.rao@starcement.com', role: 'QA Lead' }, entityClass: 'Pack', entityId: 'tp_2', entityName: 'SD Core Regression Pack', action: 'version_released', fieldChanged: 'version', oldValue: 'v4.0', newValue: 'v4.1', signatureStatus: 'verified' },
 ]
+
+// Per-entity audit events for Test Case detail views
+export interface TestCaseAuditEvent {
+  id: string
+  timestamp: string
+  actor: {
+    id: string
+    name: string
+    email: string
+    role: string
+  }
+  action: string
+  entityType: string
+  entityId: string
+  fieldChanged?: string
+  oldValue?: string
+  newValue?: string
+  signatureStatus: 'signed' | 'unsigned' | 'verified'
+  ipAddress?: string
+}
+
+export const MOCK_TEST_CASE_AUDIT: Record<string, TestCaseAuditEvent[]> = {
+  tc_1: [
+    {
+      id: 'tca_1',
+      timestamp: '2026-05-07T16:45:00+05:30',
+      actor: { id: 'u_2', name: 'J.Rao', email: 'j.rao@starcement.com', role: 'QA Lead' },
+      action: 'ir_healed',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'ir_steps[8].selector',
+      oldValue: '#MATERIAL',
+      newValue: '#MATNR',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.18',
+    },
+    {
+      id: 'tca_2',
+      timestamp: '2026-05-07T14:20:00+05:30',
+      actor: { id: 'u_3', name: 'M.Reddy', email: 'm.reddy@starcement.com', role: 'Test Engineer' },
+      action: 'execution_completed',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'last_pass_rate_pct',
+      oldValue: '94',
+      newValue: '96',
+      signatureStatus: 'signed',
+      ipAddress: '10.12.44.22',
+    },
+    {
+      id: 'tca_3',
+      timestamp: '2026-05-06T11:30:00+05:30',
+      actor: { id: 'u_1', name: 'P.Sharma', email: 'p.sharma@starcement.com', role: 'Migration Manager' },
+      action: 'status_changed',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'state',
+      oldValue: 'Draft',
+      newValue: 'Published',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.10',
+    },
+    {
+      id: 'tca_4',
+      timestamp: '2026-05-05T09:15:00+05:30',
+      actor: { id: 'agent_1', name: 'Voltus IR Generator', email: 'agent@voltuswave.com', role: 'AI Agent' },
+      action: 'ir_generated',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'ir_step_count',
+      oldValue: '12',
+      newValue: '14',
+      signatureStatus: 'signed',
+    },
+    {
+      id: 'tca_5',
+      timestamp: '2026-05-04T15:00:00+05:30',
+      actor: { id: 'u_2', name: 'J.Rao', email: 'j.rao@starcement.com', role: 'QA Lead' },
+      action: 'field_updated',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'expected_outcome',
+      oldValue: 'Sales order created',
+      newValue: 'Sales order document created with 10-digit order number',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.18',
+    },
+    {
+      id: 'tca_6',
+      timestamp: '2026-05-03T10:45:00+05:30',
+      actor: { id: 'u_4', name: 'S.Kumar', email: 's.kumar@starcement.com', role: 'Senior Test Engineer' },
+      action: 'scenario_linked',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'used_in_scenarios',
+      oldValue: '3 scenarios',
+      newValue: '4 scenarios',
+      signatureStatus: 'signed',
+      ipAddress: '10.12.44.31',
+    },
+    {
+      id: 'tca_7',
+      timestamp: '2026-05-02T14:10:00+05:30',
+      actor: { id: 'u_1', name: 'P.Sharma', email: 'p.sharma@starcement.com', role: 'Migration Manager' },
+      action: 'healing_enabled',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'healing_enabled',
+      oldValue: 'false',
+      newValue: 'true',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.10',
+    },
+    {
+      id: 'tca_8',
+      timestamp: '2026-05-01T09:30:00+05:30',
+      actor: { id: 'u_3', name: 'M.Reddy', email: 'm.reddy@starcement.com', role: 'Test Engineer' },
+      action: 'evidence_profile_changed',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'evidence_profile',
+      oldValue: 'minimal',
+      newValue: 'full',
+      signatureStatus: 'signed',
+      ipAddress: '10.12.44.22',
+    },
+    {
+      id: 'tca_9',
+      timestamp: '2026-04-28T16:00:00+05:30',
+      actor: { id: 'u_2', name: 'J.Rao', email: 'j.rao@starcement.com', role: 'QA Lead' },
+      action: 'criticality_changed',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      fieldChanged: 'criticality',
+      oldValue: 'high',
+      newValue: 'critical',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.18',
+    },
+    {
+      id: 'tca_10',
+      timestamp: '2026-04-20T10:00:00+05:30',
+      actor: { id: 'u_1', name: 'P.Sharma', email: 'p.sharma@starcement.com', role: 'Migration Manager' },
+      action: 'created',
+      entityType: 'test-case',
+      entityId: 'tc_1',
+      signatureStatus: 'verified',
+      ipAddress: '10.12.44.10',
+    },
+  ],
+}
+
+export function getTestCaseAuditEvents(testCaseId: string): TestCaseAuditEvent[] {
+  if (MOCK_TEST_CASE_AUDIT[testCaseId]) {
+    return MOCK_TEST_CASE_AUDIT[testCaseId]
+  }
+  return MOCK_REPOSITORY_AUDIT.filter(
+    (e) => e.entityClass === 'Case' && e.entityId === testCaseId,
+  ).map((e) => ({
+    id: e.id,
+    timestamp: e.timestamp,
+    actor: e.actor,
+    action: e.action,
+    entityType: 'test-case',
+    entityId: e.entityId,
+    fieldChanged: e.fieldChanged,
+    oldValue: e.oldValue,
+    newValue: e.newValue,
+    signatureStatus: e.signatureStatus,
+  }))
+}
+
+export function getScenarioAuditEvents(scenarioId: string): TestCaseAuditEvent[] {
+  return MOCK_REPOSITORY_AUDIT.filter(
+    (e) => e.entityClass === 'Scenario' && e.entityId === scenarioId,
+  ).map((e) => ({
+    id: e.id,
+    timestamp: e.timestamp,
+    actor: e.actor,
+    action: e.action,
+    entityType: 'scenario',
+    entityId: e.entityId,
+    fieldChanged: e.fieldChanged,
+    oldValue: e.oldValue,
+    newValue: e.newValue,
+    signatureStatus: e.signatureStatus,
+  }))
+}
 
 // ============================================================================
 // CURRENT USER

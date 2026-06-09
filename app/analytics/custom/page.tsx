@@ -180,11 +180,11 @@ export default function CustomReportsPage() {
               </CardHeader>
               <CardContent className="flex-1">
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="page-breadcrumb">
                     <Calendar className="h-4 w-4" />
                     <span>{report.schedule}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="page-breadcrumb">
                     <Clock className="h-4 w-4" />
                     <span>Last run: {formatRelativeTime(report.lastRun)}</span>
                   </div>

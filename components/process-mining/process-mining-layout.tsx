@@ -59,6 +59,8 @@ interface ProcessMiningLayoutProps {
 export function ProcessMiningLayout({ children }: ProcessMiningLayoutProps) {
   const pathname = usePathname()
   const activeTab = resolveActiveTab(pathname)
+  const isDetailPage =
+    /^\/process-mining\/(suggestions|variants)\/[^/]+$/.test(pathname)
 
   return (
     <div className="-m-4 sm:-m-6 lg:-m-8 flex flex-col min-h-0 flex-1">
@@ -86,11 +88,17 @@ export function ProcessMiningLayout({ children }: ProcessMiningLayoutProps) {
             }
           />
 
-          <KPIStrip kpis={PROCESS_MINING_KPIS} className="p-3 sm:p-4 lg:p-5" />
+          {activeTab !== 'suggestions' && !isDetailPage && (
+            <KPIStrip
+              kpis={PROCESS_MINING_KPIS}
+              variant="flat"
+              className="py-1 sm:py-2"
+            />
+          )}
 
           <nav
             aria-label="Process mining sections"
-            className="flex gap-1 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none"
+            className="flex lg:hidden gap-1 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none"
           >
             {TABS.map((tab) => {
               const Icon = tab.icon

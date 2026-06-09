@@ -108,7 +108,7 @@ export default function MigrationOverviewPage() {
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
           <div className="p-4 md:p-6">
             {/* Breadcrumb */}
-            <div className="flex items-center text-sm text-muted-foreground mb-2">
+            <div className="page-breadcrumb mb-2">
               <Link href="/migration-cockpit" className="hover:text-foreground">Migrations</Link>
               <ChevronRight className="h-4 w-4 mx-1" />
               <span className="text-foreground">{migration.name}</span>

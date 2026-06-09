@@ -44,11 +44,11 @@ export interface AuditEvent {
 }
 
 interface AuditTrailTableProps {
-  events: AuditEvent[]
+  events?: AuditEvent[]
   className?: string
 }
 
-export function AuditTrailTable({ events, className }: AuditTrailTableProps) {
+export function AuditTrailTable({ events = [], className }: AuditTrailTableProps) {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [actionFilter, setActionFilter] = React.useState<string>('all')
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('desc')
@@ -168,7 +168,7 @@ export function AuditTrailTable({ events, className }: AuditTrailTableProps) {
                   </TableCell>
                   <TableCell>
                     {event.oldValue ? (
-                      <code className="text-xs bg-red-50 text-red-700 px-1.5 py-0.5 rounded">
+                      <code className="text-xs bg-red-500/10 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded">
                         {event.oldValue.length > 30 
                           ? `${event.oldValue.slice(0, 30)}...` 
                           : event.oldValue}
@@ -179,7 +179,7 @@ export function AuditTrailTable({ events, className }: AuditTrailTableProps) {
                   </TableCell>
                   <TableCell>
                     {event.newValue ? (
-                      <code className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded">
+                      <code className="text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded">
                         {event.newValue.length > 30 
                           ? `${event.newValue.slice(0, 30)}...` 
                           : event.newValue}

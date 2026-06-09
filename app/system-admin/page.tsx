@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -149,14 +149,37 @@ export default function SAPSystemsPage() {
                   <RefreshCw className="h-4 w-4" />
                   <span className="hidden sm:inline">Health Check All</span>
                 </Button>
-                <Button size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New System</span>
+                <Button size="sm" className="gap-2" asChild>
+                  <Link href="/system-admin/systems/new">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">New System</span>
+                  </Link>
                 </Button>
               </div>
             </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard label="Total Systems" value={MOCK_SAP_SYSTEMS.length} icon={Server} tone="brand" />
+              <KpiStatCard
+                label="Healthy"
+                value={MOCK_SAP_SYSTEMS.filter((s) => s.health === 'healthy').length}
+                icon={CheckCircle2}
+                tone="success"
+              />
+              <KpiStatCard
+                label="Productive"
+                value={productiveSystems.length}
+                icon={Shield}
+                tone="danger"
+              />
+              <KpiStatCard
+                label="Landscapes"
+                value={new Set(MOCK_SAP_SYSTEMS.map((s) => s.landscape_role)).size}
+                icon={Activity}
+                tone="info"
+              />
+            </div>
             
-            {/* Filters */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -225,11 +248,18 @@ export default function SAPSystemsPage() {
             </div>
           )}
           
-          <div className="p-4 md:p-6">
-            <div className="border rounded-lg overflow-hidden">
+          <div className="p-4 md:p-6 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Showing{' '}
+              <span className="font-medium text-foreground tabular-nums">{filteredSystems.length}</span>{' '}
+              of{' '}
+              <span className="font-medium text-foreground tabular-nums">{MOCK_SAP_SYSTEMS.length}</span>{' '}
+              systems
+            </p>
+            <div className="border rounded-xl overflow-hidden bg-card shadow-[var(--shadow-xs)]">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead className="w-[100px]">SID</TableHead>
                     <TableHead>Display Name</TableHead>
                     <TableHead>Kind</TableHead>

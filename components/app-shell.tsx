@@ -579,25 +579,41 @@ export function AppShell({
                 </Button>
                 
                 {/* Breadcrumbs - hidden on mobile */}
-                <nav className="hidden md:flex items-center gap-1 text-sm min-w-0">
-                  <Link href="/" className="text-muted-foreground hover:text-foreground flex-shrink-0">Star Cement</Link>
+                <nav
+                  aria-label="Breadcrumb"
+                  className="hidden md:flex items-center min-w-0 max-w-[min(100%,28rem)] text-[11px] leading-none text-muted-foreground"
+                >
+                  <Link
+                    href="/"
+                    className="shrink-0 hover:text-foreground transition-colors"
+                  >
+                    Star Cement
+                  </Link>
                   {activeAppData && activeAppData.id !== 'dashboard' && (
                     <>
-                      <span className="text-muted-foreground">/</span>
-                      <Link href={activeAppData.href} className="text-foreground hover:underline font-medium truncate">
+                      <ChevronRight className="size-3 shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
+                      <Link
+                        href={activeAppData.href}
+                        className="truncate hover:text-foreground transition-colors font-medium text-foreground"
+                      >
                         {activeAppData.name}
                       </Link>
                     </>
                   )}
                   {breadcrumbs.map((crumb, idx) => (
                     <React.Fragment key={idx}>
-                      <span className="text-muted-foreground">/</span>
+                      <ChevronRight className="size-3 shrink-0 text-muted-foreground/45 mx-0.5" aria-hidden />
                       {crumb.href ? (
-                        <Link href={crumb.href} className="text-foreground hover:underline truncate">
+                        <Link
+                          href={crumb.href}
+                          className="truncate hover:text-foreground transition-colors min-w-0 max-w-[10rem]"
+                        >
                           {crumb.label}
                         </Link>
                       ) : (
-                        <span className="text-foreground font-medium truncate">{crumb.label}</span>
+                        <span className="font-medium text-foreground truncate min-w-0 max-w-[10rem]">
+                          {crumb.label}
+                        </span>
                       )}
                     </React.Fragment>
                   ))}

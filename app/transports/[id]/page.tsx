@@ -158,7 +158,7 @@ function TransportDetailContent() {
     <Tabs value={activeTab} onValueChange={setTab} className="-m-4 sm:-m-6 lg:-m-8 flex flex-col min-h-0 flex-1">
       <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-10 shadow-[var(--shadow-xs)]">
         <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="page-breadcrumb">
             <Link href="/transports" className="hover:text-foreground transition-colors">
               Transports
             </Link>
@@ -274,6 +274,9 @@ function TransportDetailContent() {
             <TabsTrigger value="screen-diff" className={tabTriggerClass}>
               <Monitor className="h-4 w-4 shrink-0" />
               Screen Diff
+              {transport.screen_diffs.length > 0 && (
+                <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-0.5">{transport.screen_diffs.length}</Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="impact" className={tabTriggerClass}>
               <AlertTriangle className="h-4 w-4 shrink-0" />

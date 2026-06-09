@@ -281,7 +281,11 @@ export function CalmRegisterTenantWizard() {
   }
 
   const handleBack = () => {
-    if (stepIndex > 0) setStepIndex((i) => i - 1)
+    if (stepIndex > 0) {
+      setStepIndex((i) => i - 1)
+    } else {
+      router.push('/system-admin/calm')
+    }
   }
 
   const handleTest = async () => {
@@ -624,7 +628,7 @@ export function CalmRegisterTenantWizard() {
       </AnimatePresence>
 
       <div className="flex items-center justify-between gap-3 pt-2">
-        <Button variant="outline" onClick={handleBack} disabled={stepIndex === 0} className="gap-2">
+        <Button variant="outline" onClick={handleBack} className="gap-2">
           <ChevronLeft className="h-4 w-4" />
           Back
         </Button>

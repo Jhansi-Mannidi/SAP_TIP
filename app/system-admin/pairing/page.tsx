@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { 
   GitBranch, 
   Plus,
@@ -13,10 +14,12 @@ import {
   ChevronDown,
   ChevronRight,
   FlaskConical,
+  Zap,
+  Users,
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
@@ -112,20 +115,48 @@ export default function PairingRulesPage() {
                   Contextual auto-assignment of Service Roles. Evaluated at Task instantiation; first matching rule wins by priority.
                 </p>
               </div>
-              <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span>New Rule</span>
+              <Button size="sm" className="gap-2" asChild>
+                <Link href="/system-admin/pairing/new">
+                  <Plus className="h-4 w-4" />
+                  <span>New Rule</span>
+                </Link>
               </Button>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard label="Total Rules" value={rules.length} icon={GitBranch} tone="brand" />
+              <KpiStatCard
+                label="Active"
+                value={rules.filter((r) => r.is_active).length}
+                icon={Zap}
+                tone="success"
+              />
+              <KpiStatCard
+                label="Inactive"
+                value={rules.filter((r) => !r.is_active).length}
+                icon={ToggleLeft}
+                tone="warning"
+              />
+              <KpiStatCard
+                label="Target Roles"
+                value={new Set(rules.map((r) => r.target_role)).size}
+                icon={Users}
+                tone="info"
+              />
             </div>
           </div>
         </div>
         
         {/* Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="border rounded-lg overflow-hidden">
+        <div className="flex-1 overflow-auto p-4 md:p-6 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground tabular-nums">{rules.length}</span> rules
+            · evaluated top-to-bottom by priority
+          </p>
+          <div className="border rounded-xl overflow-hidden bg-card shadow-[var(--shadow-xs)]">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
                   <TableHead className="w-[50px]"></TableHead>
                   <TableHead className="w-[80px]">Priority</TableHead>
                   <TableHead>Predicate</TableHead>
@@ -139,12 +170,12 @@ export default function PairingRulesPage() {
               <TableBody>
                 {rules.map((rule) => (
                   <React.Fragment key={rule.id}>
-                    <TableRow className={cn(!rule.is_active && 'opacity-50')}>
+                    <TableRow className={cn('group transition-colors', !rule.is_active && 'opacity-55')}>
                       <TableCell>
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                        <GripVertical className="h-4 w-4 text-muted-foreground/60 cursor-grab group-hover:text-muted-foreground" />
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-mono">
+                        <Badge variant="outline" className="font-mono tabular-nums h-6 bg-brand/[0.04] border-brand/25">
                           {rule.priority}
                         </Badge>
                       </TableCell>
@@ -164,9 +195,11 @@ export default function PairingRulesPage() {
                             </span>
                           </CollapsibleTrigger>
                           <CollapsibleContent className="mt-2 pl-6">
-                            <code className="text-xs bg-muted px-3 py-2 rounded block font-mono">
-                              {rule.predicate}
-                            </code>
+                            <div className="rounded-lg overflow-hidden ring-1 ring-inset ring-border bg-zinc-950 dark:bg-zinc-900">
+                              <code className="text-[11px] text-zinc-100 px-3 py-2 block font-mono overflow-x-auto">
+                                {rule.predicate}
+                              </code>
+                            </div>
                           </CollapsibleContent>
                         </Collapsible>
                       </TableCell>
@@ -255,33 +288,43 @@ export default function PairingRulesPage() {
           </div>
           
           {rules.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <GitBranch className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed border-border bg-muted/10">
+              <GitBranch className="h-12 w-12 text-muted-foreground/40 mb-4" />
               <h3 className="font-semibold text-lg">No pairing rules</h3>
               <p className="page-description mt-1">
                 Create a rule to auto-assign service roles
               </p>
+              <Button size="sm" className="mt-4 gap-2" asChild>
+                <Link href="/system-admin/pairing/new">
+                  <Plus className="h-4 w-4" />
+                  New Rule
+                </Link>
+              </Button>
             </div>
           )}
         </div>
         
         {/* Test Rule Dialog */}
         <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Test Rule against Sample Context</DialogTitle>
-              <DialogDescription>
-                Paste a sample context JSON to see if the rule matches and what assignee resolves to.
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0">
+            <div className="px-6 pt-6 pb-4 border-b border-border bg-gradient-to-br from-brand/[0.08] via-background to-background">
+              <DialogHeader className="space-y-1.5">
+                <DialogTitle className="text-base">Test Rule against Sample Context</DialogTitle>
+                <DialogDescription className="text-xs">
+                  Paste a sample context JSON to see if the rule matches and what assignee resolves to.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="px-6 py-5 space-y-4">
             
-            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Sample Context (JSON)</label>
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
+                  Sample Context (JSON)
+                </label>
                 <Textarea
                   value={testContext}
                   onChange={(e) => setTestContext(e.target.value)}
-                  className="font-mono text-sm h-48"
+                  className="font-mono text-sm h-48 resize-none"
                   placeholder='{"scenario": {"module": "SD"}, ...}'
                 />
               </div>
@@ -307,11 +350,11 @@ export default function PairingRulesPage() {
               )}
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="px-6 py-4 border-t border-border bg-muted/20">
               <Button variant="outline" onClick={() => setTestDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={runTest}>
+              <Button onClick={runTest} className="bg-brand text-brand-foreground hover:bg-brand/90">
                 <Play className="h-4 w-4 mr-2" />
                 Run Test
               </Button>

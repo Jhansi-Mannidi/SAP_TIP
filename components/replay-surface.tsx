@@ -110,7 +110,7 @@ export function ReplaySurface({ caseExecution, className }: ReplaySurfaceProps) 
             </div>
           )}
           
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="page-breadcrumb">
             <Clock className="h-4 w-4" />
             <span>{new Date(caseExecution.startedAt).toLocaleString()}</span>
           </div>
@@ -149,7 +149,7 @@ export function ReplaySurface({ caseExecution, className }: ReplaySurfaceProps) 
               </Button>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="page-breadcrumb">
               Step {currentStepIndex + 1} of {caseExecution.steps.length}
             </div>
           </div>

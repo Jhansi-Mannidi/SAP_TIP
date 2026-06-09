@@ -62,7 +62,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from '@/components/ui/sheet'
 import {
   Dialog,
@@ -72,8 +71,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Progress } from '@/components/ui/progress'
@@ -87,6 +84,12 @@ import { cn } from '@/lib/utils'
 import { MOCK_TEST_CASES, MOCK_TEST_SCENARIOS } from '@/lib/mock-data'
 import { NewTestCaseSheet, type TestCaseSheetMode } from '@/components/new-test-case-sheet'
 import { DeleteTestCaseDialog } from '@/components/delete-test-case-dialog'
+import {
+  TestCaseFilterSheet,
+  EMPTY_TEST_CASE_FILTERS,
+  countTestCaseAdvancedFilters,
+  type TestCaseAdvancedFilters,
+} from '@/components/test-repository/test-case-filter-sheet'
 import { useRouter } from 'next/navigation'
 
 // Task type icons and labels
@@ -163,67 +166,66 @@ export default function TestCasesListPage() {
     [router],
   )
   
-  // Filter state
-  const [filters, setFilters] = React.useState({
-    taskTypes: [] as string[],
-    criticalities: [] as string[],
-    hasIr: null as boolean | null,
-    states: [] as string[],
-    customerScopes: [] as string[],
-  })
-  
-  // Simulated loading
+  const [filters, setFilters] = React.useState<TestCaseAdvancedFilters>(EMPTY_TEST_CASE_FILTERS)
+
+  const applyTestCaseFilters = React.useCallback(
+    (advanced: TestCaseAdvancedFilters, chipId: string, query: string) => {
+      let cases = [...MOCK_TEST_CASES]
+
+      if (query) {
+        const q = query.toLowerCase()
+        cases = cases.filter(
+          (c) =>
+            c.name.toLowerCase().includes(q) ||
+            c.code.toLowerCase().includes(q) ||
+            c.tags.some((t) => t.toLowerCase().includes(q)),
+        )
+      }
+
+      if (chipId === 'with-ir') {
+        cases = cases.filter((c) => c.has_ir)
+      } else if (chipId === 'transactions') {
+        cases = cases.filter((c) => c.task_type === 'run_transaction')
+      } else if (chipId === 'assertions') {
+        cases = cases.filter((c) => c.task_type === 'assert_data_state')
+      } else if (chipId === 'sign-offs') {
+        cases = cases.filter((c) => c.task_type === 'sign_off_scenario')
+      } else if (chipId === 'failing') {
+        cases = cases.filter((c) => c.last_pass_rate_pct > 0 && c.last_pass_rate_pct < 95)
+      }
+
+      if (advanced.taskTypes.length > 0) {
+        cases = cases.filter((c) => advanced.taskTypes.includes(c.task_type))
+      }
+      if (advanced.criticalities.length > 0) {
+        cases = cases.filter((c) => advanced.criticalities.includes(c.criticality))
+      }
+      if (advanced.hasIr !== null) {
+        cases = cases.filter((c) => c.has_ir === advanced.hasIr)
+      }
+      if (advanced.states.length > 0) {
+        cases = cases.filter((c) => advanced.states.includes(c.state))
+      }
+      if (advanced.customerScopes.length > 0) {
+        cases = cases.filter((c) => advanced.customerScopes.includes(c.customer_scope))
+      }
+
+      return cases
+    },
+    [],
+  )
+
+  const filteredCases = React.useMemo(
+    () => applyTestCaseFilters(filters, activeFilter, searchQuery),
+    [applyTestCaseFilters, filters, activeFilter, searchQuery],
+  )
+
+  const advancedFilterCount = countTestCaseAdvancedFilters(filters)
+
   React.useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800)
     return () => clearTimeout(timer)
   }, [])
-  
-  // Filter test cases
-  const filteredCases = React.useMemo(() => {
-    let cases = [...MOCK_TEST_CASES]
-    
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      cases = cases.filter(c => 
-        c.name.toLowerCase().includes(query) ||
-        c.code.toLowerCase().includes(query) ||
-        c.tags.some(t => t.toLowerCase().includes(query))
-      )
-    }
-    
-    // Quick filters
-    if (activeFilter === 'with-ir') {
-      cases = cases.filter(c => c.has_ir)
-    } else if (activeFilter === 'transactions') {
-      cases = cases.filter(c => c.task_type === 'run_transaction')
-    } else if (activeFilter === 'assertions') {
-      cases = cases.filter(c => c.task_type === 'assert_data_state')
-    } else if (activeFilter === 'sign-offs') {
-      cases = cases.filter(c => c.task_type === 'sign_off_scenario')
-    } else if (activeFilter === 'failing') {
-      cases = cases.filter(c => c.last_pass_rate_pct > 0 && c.last_pass_rate_pct < 95)
-    }
-    
-    // Advanced filters
-    if (filters.taskTypes.length > 0) {
-      cases = cases.filter(c => filters.taskTypes.includes(c.task_type))
-    }
-    if (filters.criticalities.length > 0) {
-      cases = cases.filter(c => filters.criticalities.includes(c.criticality))
-    }
-    if (filters.hasIr !== null) {
-      cases = cases.filter(c => c.has_ir === filters.hasIr)
-    }
-    if (filters.states.length > 0) {
-      cases = cases.filter(c => filters.states.includes(c.state))
-    }
-    if (filters.customerScopes.length > 0) {
-      cases = cases.filter(c => filters.customerScopes.includes(c.customer_scope))
-    }
-    
-    return cases
-  }, [searchQuery, activeFilter, filters])
   
   // Get scenarios for a test case
   const getScenariosForCase = (scenarioIds: string[]) => {
@@ -293,184 +295,32 @@ export default function TestCasesListPage() {
               ))}
             </div>
             
-            {/* Advanced Filter Button */}
-            <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8">
-                  <Filter className="h-4 w-4" />
-                  Filters
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filter Test Cases</SheetTitle>
-                  <SheetDescription>
-                    Apply filters to narrow down the test case list.
-                  </SheetDescription>
-                </SheetHeader>
-                
-                <div className="space-y-6 mt-6">
-                  {/* Task Type */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Task Type</Label>
-                    <div className="space-y-2">
-                      {Object.entries(taskTypeConfig).map(([type, config]) => (
-                        <div key={type} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`type-${type}`}
-                            checked={filters.taskTypes.includes(type)}
-                            onCheckedChange={(checked) => {
-                              setFilters(prev => ({
-                                ...prev,
-                                taskTypes: checked
-                                  ? [...prev.taskTypes, type]
-                                  : prev.taskTypes.filter(t => t !== type)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`type-${type}`} className="text-sm font-normal">
-                            {config.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Criticality */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Criticality</Label>
-                    <div className="space-y-2">
-                      {['critical', 'high', 'medium', 'low'].map(crit => (
-                        <div key={crit} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`crit-${crit}`}
-                            checked={filters.criticalities.includes(crit)}
-                            onCheckedChange={(checked) => {
-                              setFilters(prev => ({
-                                ...prev,
-                                criticalities: checked
-                                  ? [...prev.criticalities, crit]
-                                  : prev.criticalities.filter(c => c !== crit)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`crit-${crit}`} className="text-sm font-normal capitalize">
-                            {crit}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Has IR */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Has IR</Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="has-ir-yes"
-                          checked={filters.hasIr === true}
-                          onCheckedChange={(checked) => {
-                            setFilters(prev => ({
-                              ...prev,
-                              hasIr: checked ? true : null
-                            }))
-                          }}
-                        />
-                        <Label htmlFor="has-ir-yes" className="text-sm font-normal">
-                          Yes
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="has-ir-no"
-                          checked={filters.hasIr === false}
-                          onCheckedChange={(checked) => {
-                            setFilters(prev => ({
-                              ...prev,
-                              hasIr: checked ? false : null
-                            }))
-                          }}
-                        />
-                        <Label htmlFor="has-ir-no" className="text-sm font-normal">
-                          No
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* State */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">State</Label>
-                    <div className="space-y-2">
-                      {['Draft', 'Published', 'Deprecated', 'Archived'].map(state => (
-                        <div key={state} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`state-${state}`}
-                            checked={filters.states.includes(state)}
-                            onCheckedChange={(checked) => {
-                              setFilters(prev => ({
-                                ...prev,
-                                states: checked
-                                  ? [...prev.states, state]
-                                  : prev.states.filter(s => s !== state)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`state-${state}`} className="text-sm font-normal">
-                            {state}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Customer Scope */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Customer Scope</Label>
-                    <div className="space-y-2">
-                      {['Global', 'Customer', 'Workspace'].map(scope => (
-                        <div key={scope} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`scope-${scope}`}
-                            checked={filters.customerScopes.includes(scope)}
-                            onCheckedChange={(checked) => {
-                              setFilters(prev => ({
-                                ...prev,
-                                customerScopes: checked
-                                  ? [...prev.customerScopes, scope]
-                                  : prev.customerScopes.filter(s => s !== scope)
-                              }))
-                            }}
-                          />
-                          <Label htmlFor={`scope-${scope}`} className="text-sm font-normal">
-                            {scope}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setFilters({
-                        taskTypes: [],
-                        criticalities: [],
-                        hasIr: null,
-                        states: [],
-                        customerScopes: [],
-                      })}
-                    >
-                      Clear All
-                    </Button>
-                    <Button onClick={() => setIsFilterSheetOpen(false)}>
-                      Apply Filters
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'gap-2 h-8',
+                advancedFilterCount > 0 && 'border-brand/40 bg-brand/[0.06]',
+              )}
+              onClick={() => setIsFilterSheetOpen(true)}
+            >
+              <Filter className="h-4 w-4" />
+              Filters
+              {advancedFilterCount > 0 && (
+                <Badge className="ml-0.5 h-4 px-1 text-[10px] bg-brand text-brand-foreground border-0">
+                  {advancedFilterCount}
+                </Badge>
+              )}
+            </Button>
+
+            <TestCaseFilterSheet
+              open={isFilterSheetOpen}
+              onOpenChange={setIsFilterSheetOpen}
+              filters={filters}
+              onFiltersChange={setFilters}
+              totalCount={MOCK_TEST_CASES.length}
+              countMatches={(f) => applyTestCaseFilters(f, activeFilter, searchQuery).length}
+            />
           </div>
         </div>
         

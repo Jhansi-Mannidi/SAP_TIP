@@ -13,10 +13,12 @@ import {
   XCircle,
   Copy,
   Loader2,
+  Server,
+  Database,
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -116,13 +118,41 @@ export default function RFCDestinationsPage() {
                   Registered iHub connections to SAP systems. Used for read-only data access and execution where applicable.
                 </p>
               </div>
-              <Button size="sm" className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span>New Destination</span>
+              <Button size="sm" className="gap-2" asChild>
+                <Link href="/system-admin/rfc/new">
+                  <Plus className="h-4 w-4" />
+                  <span>New Destination</span>
+                </Link>
               </Button>
             </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard
+                label="Destinations"
+                value={MOCK_RFC_DESTINATIONS.length}
+                icon={Plug}
+                tone="brand"
+              />
+              <KpiStatCard
+                label="Healthy"
+                value={MOCK_RFC_DESTINATIONS.filter((r) => r.health === 'healthy').length}
+                icon={CheckCircle2}
+                tone="success"
+              />
+              <KpiStatCard
+                label="Systems"
+                value={new Set(MOCK_RFC_DESTINATIONS.map((r) => r.system_id)).size}
+                icon={Server}
+                tone="info"
+              />
+              <KpiStatCard
+                label="Pool Capacity"
+                value={MOCK_RFC_DESTINATIONS.reduce((s, r) => s + r.pool_size, 0)}
+                icon={Database}
+                tone="neutral"
+              />
+            </div>
             
-            {/* Search */}
             <div className="flex items-center gap-3 mt-4">
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -130,19 +160,29 @@ export default function RFCDestinationsPage() {
                   placeholder="Search destinations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-9"
                 />
               </div>
             </div>
           </div>
         </div>
         
-        {/* Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <div className="border rounded-lg overflow-hidden">
+        <div className="flex-1 overflow-auto p-4 md:p-6 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Showing{' '}
+            <span className="font-medium text-foreground tabular-nums">
+              {filteredDestinations.length}
+            </span>{' '}
+            of{' '}
+            <span className="font-medium text-foreground tabular-nums">
+              {MOCK_RFC_DESTINATIONS.length}
+            </span>{' '}
+            destinations
+          </p>
+          <div className="border rounded-xl overflow-hidden bg-card shadow-[var(--shadow-xs)]">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
                   <TableHead>Name</TableHead>
                   <TableHead>SAP System</TableHead>
                   <TableHead>Client</TableHead>
@@ -155,8 +195,15 @@ export default function RFCDestinationsPage() {
               </TableHeader>
               <TableBody>
                 {filteredDestinations.map((rfc) => (
-                  <TableRow key={rfc.id}>
-                    <TableCell className="font-mono font-medium">{rfc.name}</TableCell>
+                  <TableRow key={rfc.id} className="group transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                          <Plug className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="font-mono font-medium text-sm">{rfc.name}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Link 
                         href={`/system-admin/systems/${rfc.system_id}`}
@@ -236,6 +283,12 @@ export default function RFCDestinationsPage() {
               <p className="page-description mt-1">
                 Create a new RFC destination to connect to SAP systems
               </p>
+              <Button size="sm" className="mt-4 gap-2" asChild>
+                <Link href="/system-admin/rfc/new">
+                  <Plus className="h-4 w-4" />
+                  New Destination
+                </Link>
+              </Button>
             </div>
           )}
         </div>

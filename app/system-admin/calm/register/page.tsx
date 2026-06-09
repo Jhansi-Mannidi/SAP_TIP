@@ -13,7 +13,7 @@ export default function RegisterCalmTenantPage() {
       <div className="-m-4 sm:-m-6 lg:-m-8 flex flex-col min-h-0 flex-1">
         <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-10 shadow-[var(--shadow-xs)]">
           <div className="px-4 sm:px-6 lg:px-8 py-4 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+            <div className="page-breadcrumb">
               <Link href="/system-admin/calm" className="hover:text-foreground transition-colors">
                 Cloud ALM
               </Link>

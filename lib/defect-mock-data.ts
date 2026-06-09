@@ -1,5 +1,7 @@
 // Defect & Issue Management Mock Data
 
+import { SUPPLEMENTAL_DEFECTS } from './mock-data-supplement'
+
 export type DefectSeverity = 'Critical' | 'High' | 'Medium' | 'Low'
 export type DefectPriority = 'P1' | 'P2' | 'P3' | 'P4'
 export type DefectState = 'Open' | 'Triaged' | 'Assigned' | 'In Fix' | 'Retest Pending' | 'Retest In Progress' | 'Closed' | 'Rejected'
@@ -316,14 +318,15 @@ See attached screenshot from test execution run_2026_05_07_001.`,
     comments_count: 2,
     evidence_count: 1,
   },
+  ...SUPPLEMENTAL_DEFECTS,
 ]
 
 export const MOCK_DEFECT_KPIS = {
-  open_total: 10,
-  critical_open: 2,
-  high_open: 4,
-  in_fix: 3,
-  mttr_hours: 72,
+  open_total: 28,
+  critical_open: 5,
+  high_open: 9,
+  in_fix: 8,
+  mttr_hours: 68,
 }
 
 export interface DefectComment {

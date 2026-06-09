@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { TestPackWizard } from '@/components/test-pack-wizard'
+import { DeleteTestPackDialog } from '@/components/test-repository/delete-test-pack-dialog'
 
 import { MOCK_TEST_PACKS, type TestPack, type DistributionStatus } from '@/lib/mock-data'
 
@@ -88,7 +89,13 @@ function ContentStat({
   )
 }
 
-function TestPackCard({ pack }: { pack: TestPack }) {
+function TestPackCard({
+  pack,
+  onDelete,
+}: {
+  pack: TestPack
+  onDelete: (pack: TestPack) => void
+}) {
   const statusStyle = statusStyles[pack.distribution_status]
   const sigStyle = signatureStyles[pack.signature_state]
   const StatusIcon = statusStyle.icon
@@ -140,30 +147,29 @@ function TestPackCard({ pack }: { pack: TestPack }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Eye className="h-4 w-4 mr-2" />
-                View Details
+              <DropdownMenuItem asChild>
+                <Link href={`/test-repository/packs/${pack.id}`}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Copy className="h-4 w-4 mr-2" />
-                Clone Pack
+              <DropdownMenuItem asChild>
+                <Link href={`/test-repository/packs/${pack.id}/clone`}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Clone Pack
+                </Link>
               </DropdownMenuItem>
-              {pack.distribution_status === 'Draft' && (
-                <DropdownMenuItem>
-                  <Send className="h-4 w-4 mr-2" />
-                  Publish
-                </DropdownMenuItem>
-              )}
-              {pack.distribution_status === 'Published' && (
-                <DropdownMenuItem asChild>
-                  <Link href={`/test-repository/packs/${pack.id}/distribute`}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Distribute
-                  </Link>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem asChild>
+                <Link href={`/test-repository/packs/${pack.id}/distribute`}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Distribute
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => onDelete(pack)}
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
               </DropdownMenuItem>
@@ -261,8 +267,13 @@ export default function TestPacksPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<string>('all')
   const [isWizardOpen, setIsWizardOpen] = React.useState(false)
-  
-  const filteredPacks = MOCK_TEST_PACKS.filter(pack => {
+  const [hiddenPackIds, setHiddenPackIds] = React.useState<string[]>([])
+  const [deletePack, setDeletePack] = React.useState<TestPack | null>(null)
+  const [deleteOpen, setDeleteOpen] = React.useState(false)
+
+  const visiblePacks = MOCK_TEST_PACKS.filter((p) => !hiddenPackIds.includes(p.id))
+
+  const filteredPacks = visiblePacks.filter(pack => {
     const matchesSearch = pack.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          pack.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || pack.distribution_status === statusFilter
@@ -270,10 +281,15 @@ export default function TestPacksPage() {
   })
   
   // Stats
-  const totalPacks = MOCK_TEST_PACKS.length
-  const publishedPacks = MOCK_TEST_PACKS.filter(p => p.distribution_status === 'Published').length
-  const distributedPacks = MOCK_TEST_PACKS.filter(p => p.distribution_status === 'Distributed').length
-  const totalDownloads = MOCK_TEST_PACKS.reduce((sum, p) => sum + p.download_count, 0)
+  const totalPacks = visiblePacks.length
+  const publishedPacks = visiblePacks.filter(p => p.distribution_status === 'Published').length
+  const distributedPacks = visiblePacks.filter(p => p.distribution_status === 'Distributed').length
+  const totalDownloads = visiblePacks.reduce((sum, p) => sum + p.download_count, 0)
+
+  const handleDeleteRequest = (pack: TestPack) => {
+    setDeletePack(pack)
+    setDeleteOpen(true)
+  }
 
   return (
     <AppShell currentApp="test-repository">
@@ -390,7 +406,7 @@ export default function TestPacksPage() {
             fast
           >
             {filteredPacks.map((pack) => (
-              <TestPackCard key={pack.id} pack={pack} />
+              <TestPackCard key={pack.id} pack={pack} onDelete={handleDeleteRequest} />
             ))}
           </StaggerGrid>
           
@@ -408,6 +424,13 @@ export default function TestPacksPage() {
       
       {/* Test Pack Composition Wizard */}
       <TestPackWizard open={isWizardOpen} onOpenChange={setIsWizardOpen} />
+
+      <DeleteTestPackDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        pack={deletePack}
+        onDeleted={(packId) => setHiddenPackIds((ids) => [...ids, packId])}
+      />
     </AppShell>
   )
 }

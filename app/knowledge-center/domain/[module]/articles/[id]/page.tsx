@@ -167,7 +167,7 @@ export default function ArticleDetailPage() {
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 flex-wrap">
+            <div className="page-breadcrumb mb-4">
               <Link href="/knowledge-center/domain" className="hover:text-foreground transition-colors">
                 Domain KB
               </Link>

@@ -79,7 +79,10 @@ import {
   type Transport,
   type TransportState,
   type ImpactVerdict,
+  type ScreenDiff,
+  type ScreenField,
 } from '@/lib/transport-mock-data'
+import { ScreenDiffViewer, type ScreenModel } from '@/components/screen-diff-viewer'
 
 /* -------------------------------------------------------------------------- */
 /* Shared helpers                                                             */
@@ -482,7 +485,87 @@ export function TransportPipelinePanel({ transport }: { transport: Transport }) 
 /* Screen Diff                                                                */
 /* -------------------------------------------------------------------------- */
 
+function severityPill(severity: ScreenDiff['severity']): string {
+  switch (severity) {
+    case 'breaking':
+      return 'pill pill-danger'
+    case 'minor':
+      return 'pill pill-warning'
+    case 'cosmetic':
+      return 'pill pill-info'
+    default:
+      return 'pill pill-neutral'
+  }
+}
+
+function transportFieldsToModel(
+  program: string,
+  dynpro: string,
+  fields: ScreenField[],
+  tcode?: string,
+): ScreenModel {
+  return {
+    screenId: `${program}/${dynpro}`,
+    title: program,
+    tcode,
+    fields: fields.map((f) => ({
+      id: f.id,
+      name: f.name,
+      label: f.label,
+      type: f.type === 'label' || f.type === 'table' ? 'text' : f.type,
+      required: f.required,
+    })),
+  }
+}
+
+const SCREEN_TCODE_MAP: Record<string, string> = {
+  'SAPMV45A/4100': 'VA01',
+  'SAPLZSDTJ/0100': 'ZSDTJ',
+  'SAPMV60A/0200': 'VF01',
+  'SAPLFTXP/0100': 'FTXP',
+}
+
+function collectFieldChanges(diff: ScreenDiff) {
+  const afterById = new Map(diff.after_model.map((f) => [f.id, f]))
+  const beforeById = new Map(diff.before_model.map((f) => [f.id, f]))
+  const changes: { field: string; change: string; detail: string }[] = []
+
+  for (const field of diff.after_model) {
+    const before = beforeById.get(field.id)
+    if (!before) {
+      changes.push({ field: field.name, change: 'Added', detail: field.label })
+      continue
+    }
+    if (before.required !== field.required) {
+      changes.push({
+        field: field.name,
+        change: 'Modified',
+        detail: `Required: ${before.required ? 'yes' : 'no'} → ${field.required ? 'yes' : 'no'}`,
+      })
+    }
+    if (field.changed === 'modified' && before.required === field.required) {
+      changes.push({ field: field.name, change: 'Modified', detail: field.label })
+    }
+  }
+
+  for (const field of diff.before_model) {
+    if (!afterById.has(field.id)) {
+      changes.push({ field: field.name, change: 'Removed', detail: field.label })
+    }
+  }
+
+  return changes
+}
+
 export function TransportScreenDiffPanel({ transport }: { transport: Transport }) {
+  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (transport.screen_diffs.length > 0) {
+      setSelectedId(transport.screen_diffs[0].id)
+    }
+  }, [transport.id, transport.screen_diffs])
+
   if (transport.screen_diffs.length === 0) {
     return (
       <TabPanel>
@@ -495,37 +578,122 @@ export function TransportScreenDiffPanel({ transport }: { transport: Transport }
     )
   }
 
+  const selected =
+    transport.screen_diffs.find((d) => d.id === selectedId) ?? transport.screen_diffs[0]
+  const breaking = transport.screen_diffs.filter((d) => d.severity === 'breaking').length
+  const fieldsChanged = transport.screen_diffs.reduce(
+    (sum, d) => sum + d.fields_added + d.fields_modified + d.fields_removed,
+    0,
+  )
+  const screenKey = `${selected.program}/${selected.dynpro}`
+
   return (
     <TabPanel>
-      <StaggerGrid columns="grid-cols-1 md:grid-cols-2" className="gap-4 w-full" fast>
-        {transport.screen_diffs.map((diff) => (
-          <Card key={diff.id} className="shadow-[var(--shadow-xs)]">
-            <CardHeader className="pb-2">
+      <SectionHeader
+        title="Screen Diff Analysis"
+        description={`${transport.screen_diffs.length} dynpro screens with model changes detected`}
+      />
+
+      <StaggerGrid columns="grid-cols-2 lg:grid-cols-4" className="gap-3 w-full" fast>
+        <KpiStatCard label="Screens Changed" value={transport.screen_diffs.length} icon={Monitor} tone="brand" className="min-h-[5.5rem]" />
+        <KpiStatCard label="Breaking" value={breaking} icon={AlertTriangle} tone="danger" className="min-h-[5.5rem]" />
+        <KpiStatCard label="Field Changes" value={fieldsChanged} icon={LayoutGrid} tone="warning" className="min-h-[5.5rem]" />
+        <KpiStatCard label="Programs" value={new Set(transport.screen_diffs.map((d) => d.program)).size} icon={Code2} tone="info" className="min-h-[5.5rem]" />
+      </StaggerGrid>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1 space-y-2">
+          {transport.screen_diffs.map((diff) => (
+            <button
+              key={diff.id}
+              type="button"
+              onClick={() => setSelectedId(diff.id)}
+              className={cn(
+                'w-full text-left rounded-xl border p-3 transition-colors',
+                selected.id === diff.id
+                  ? 'border-brand/40 bg-brand/[0.06] ring-1 ring-brand/20'
+                  : 'border-border bg-card hover:bg-muted/20',
+              )}
+            >
               <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base font-mono">
-                  {diff.program} / {diff.dynpro}
-                </CardTitle>
-                <Badge
-                  className={cn(
-                    'h-5 text-[10px] border-0',
-                    diff.severity === 'breaking' ? 'pill pill-danger' : 'pill pill-warning',
-                  )}
-                >
+                <span className="font-mono text-xs font-bold">{diff.program}/{diff.dynpro}</span>
+                <Badge className={cn('h-5 text-[10px] border-0 capitalize', severityPill(diff.severity))}>
                   {diff.severity}
                 </Badge>
               </div>
-              <CardDescription>{diff.summary}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 text-sm">
-                <span><strong className="text-foreground">{diff.fields_modified}</strong> modified</span>
-                <span><strong className="text-foreground">{diff.fields_added}</strong> added</span>
-                <span><strong className="text-foreground">{diff.fields_removed}</strong> removed</span>
+              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{diff.summary}</p>
+              <div className="flex gap-3 mt-2 text-[10px] text-muted-foreground">
+                <span>{diff.fields_modified} mod</span>
+                <span>{diff.fields_added} add</span>
+                <span>{diff.fields_removed} rem</span>
               </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="shadow-[var(--shadow-xs)]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-mono">{selected.program} / {selected.dynpro}</CardTitle>
+              <CardDescription>{selected.summary}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selected.before_model.length > 0 && selected.after_model.length > 0 && (
+                <ScreenDiffViewer
+                  beforeModel={transportFieldsToModel(
+                    selected.program,
+                    selected.dynpro,
+                    selected.before_model,
+                    SCREEN_TCODE_MAP[screenKey],
+                  )}
+                  afterModel={transportFieldsToModel(
+                    selected.program,
+                    selected.dynpro,
+                    selected.after_model,
+                    SCREEN_TCODE_MAP[screenKey],
+                  )}
+                />
+              )}
+
+              {collectFieldChanges(selected).length > 0 && (
+                <div className="rounded-lg border border-border/60 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead>Field</TableHead>
+                        <TableHead>Change</TableHead>
+                        <TableHead>Detail</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {collectFieldChanges(selected).map((row) => (
+                        <TableRow key={`${row.field}-${row.change}`}>
+                          <TableCell className="font-mono text-xs">{row.field}</TableCell>
+                          <TableCell>
+                            <Badge
+                              className={cn(
+                                'h-5 text-[10px] border-0',
+                                row.change === 'Added'
+                                  ? 'pill pill-success'
+                                  : row.change === 'Removed'
+                                    ? 'pill pill-danger'
+                                    : 'pill pill-warning',
+                              )}
+                            >
+                              {row.change}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{row.detail}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
-        ))}
-      </StaggerGrid>
+        </div>
+      </div>
     </TabPanel>
   )
 }
@@ -819,8 +987,12 @@ interface ABAPFinding {
 }
 
 const TAX_ABAP_FINDINGS: ABAPFinding[] = [
-  { id: 'af_t1', object_name: 'FTXP', finding_type: 'warning', message: 'Tax procedure references legacy condition types', recommendation: 'Verify condition type mapping in S/4HANA tax configuration' },
-  { id: 'af_t2', object_name: 'OBCL', finding_type: 'info', message: 'Tax classification table entry modified', recommendation: 'Validate tax class assignments for all material groups' },
+  { id: 'af_t1', object_name: 'ZSD_TAX_JURIS', finding_type: 'warning', message: 'SELECT on ZTAX_JURIS missing client authority check', recommendation: 'Add AUTHORITY-CHECK or use standard tax jurisdiction API' },
+  { id: 'af_t2', object_name: 'ZSD_TAX_JURIS', finding_type: 'error', message: 'Deprecated FM TAX_JURISDICTION_READ used for interstate lookup', recommendation: 'Replace with CL_TXS_CONTROLLER=>GET_JURISDICTION in S/4HANA' },
+  { id: 'af_t3', object_name: 'ZCL_TAX_JURIS', finding_type: 'warning', message: 'Class method missing exception handling for invalid state codes', recommendation: 'Add CX_STATIC_CHECK and map to user-friendly VA message' },
+  { id: 'af_t4', object_name: 'ZSD_TAX', finding_type: 'info', message: 'Function group contains 2 obsolete PERFORM includes', recommendation: 'Review includes ZSD_TAX_F01 and ZSD_TAX_F02 for cleanup' },
+  { id: 'af_t5', object_name: 'ZSDTJ', finding_type: 'warning', message: 'Dynpro 0100 PBO module references unreleased OSS note field', recommendation: 'Validate GST region dropdown against note 3124567' },
+  { id: 'af_t6', object_name: 'ZTAX_JURIS', finding_type: 'info', message: 'Custom table ZTAX_JURIS has no append structure for extensibility', recommendation: 'Consider append for future state code additions' },
 ]
 
 export function TransportAbapPanel({ transport }: { transport: Transport }) {
@@ -890,20 +1062,31 @@ interface AuditEvent {
   details: string
 }
 
-const TAX_AUDIT_EVENTS: AuditEvent[] = [
-  { id: 'ae_t1', timestamp: '2026-05-06T12:00:00+05:30', actor: { type: 'agent', name: 'Test Plan Generator' }, action: 'Test Plan Ready', action_type: 'analysis', details: 'Generated regeneration plan for 3 test cases affected by tax procedure change.' },
-  { id: 'ae_t2', timestamp: '2026-05-06T11:00:00+05:30', actor: { type: 'agent', name: 'Impact Analysis Agent' }, action: 'Impact Analysis Complete', action_type: 'analysis', details: 'Analyzed 28 linked tests. 3 regenerate, 1 needs healing, 2 safe.' },
-  { id: 'ae_t3', timestamp: '2026-05-06T09:30:00+05:30', actor: { type: 'agent', name: 'Classification Agent' }, action: 'Objects Classified', action_type: 'analysis', details: 'Classified FTXP (CUS0) and OBCL (CUS1) as customizing / z-config.' },
-  { id: 'ae_t4', timestamp: '2026-05-06T09:00:00+05:30', actor: { type: 'human', name: 'P.Sharma', role: 'Migration Manager' }, action: 'Transport Captured', action_type: 'system', details: 'Transport STAK900134 captured from SD1 with 2 objects.' },
-]
+function buildAuditEvents(transport: Transport): AuditEvent[] {
+  const objectCount = transport.objects.length
+  const screenCount = transport.screen_diffs.length
+  const verdictCount = transport.impact_verdicts.length
+  const regenerateCount = transport.impact_verdicts.filter((v) => v.verdict === 'regenerate').length
+
+  if (verdictCount > 0 || screenCount > 0) {
+    return [
+      { id: 'ae_t1', timestamp: '2026-05-06T12:00:00+05:30', actor: { type: 'agent', name: 'Test Plan Generator' }, action: 'Test Plan Ready', action_type: 'analysis', details: `Generated regeneration plan for ${regenerateCount} test cases affected by tax jurisdiction changes.` },
+      { id: 'ae_t2', timestamp: '2026-05-06T11:00:00+05:30', actor: { type: 'agent', name: 'Impact Analysis Agent' }, action: 'Impact Analysis Complete', action_type: 'analysis', details: `Analyzed ${verdictCount || transport.linked_tests_count} linked tests across OTC and RTR scenarios.` },
+      { id: 'ae_t3', timestamp: '2026-05-06T10:30:00+05:30', actor: { type: 'agent', name: 'Screen Diff Agent' }, action: 'Screen Models Compared', action_type: 'analysis', details: `Detected ${screenCount} dynpro changes including TXJCD required flag on VA01.` },
+      { id: 'ae_t4', timestamp: '2026-05-06T09:30:00+05:30', actor: { type: 'agent', name: 'Classification Agent' }, action: 'Objects Classified', action_type: 'analysis', details: `Classified ${objectCount} objects: customizing, Z-programs, DDIC, and dialog transaction.` },
+      { id: 'ae_t5', timestamp: '2026-05-06T09:00:00+05:30', actor: { type: 'human', name: 'P.Sharma', role: 'Migration Manager' }, action: 'Transport Captured', action_type: 'system', details: `Transport ${transport.tr_number} captured from SD1 with ${objectCount} objects.` },
+    ]
+  }
+
+  return [
+    { id: 'ae_t4', timestamp: '2026-05-06T09:00:00+05:30', actor: { type: 'human', name: 'P.Sharma', role: 'Migration Manager' }, action: 'Transport Captured', action_type: 'system', details: `Transport ${transport.tr_number} captured from SD1 with ${objectCount} objects.` },
+  ]
+}
 
 export function TransportAuditPanel({ transport }: { transport: Transport }) {
   const [search, setSearch] = React.useState('')
 
-  const events = TAX_AUDIT_EVENTS.map((e) => ({
-    ...e,
-    details: e.details.replace('STAK900134', transport.tr_number),
-  }))
+  const events = buildAuditEvents(transport)
 
   const filtered = events.filter(
     (e) =>

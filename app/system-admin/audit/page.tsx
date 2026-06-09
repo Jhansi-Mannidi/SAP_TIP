@@ -23,11 +23,10 @@ import {
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Select,
@@ -267,6 +266,10 @@ export default function ConfigAuditPage() {
     return matchesSearch && matchesEntity && matchesAction
   })
 
+  const uniqueActors = new Set(MOCK_CONFIG_AUDIT.map((e) => e.actor.email)).size
+  const updateCount = MOCK_CONFIG_AUDIT.filter((e) => e.action === 'update').length
+  const createCount = MOCK_CONFIG_AUDIT.filter((e) => e.action === 'create').length
+
   return (
     <AppShell currentApp="system-admin">
       <div className="flex flex-col h-full">
@@ -280,7 +283,13 @@ export default function ConfigAuditPage() {
               </p>
             </div>
 
-            {/* Filters */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard label="Total Events" value={MOCK_CONFIG_AUDIT.length} icon={History} tone="brand" />
+              <KpiStatCard label="Updates" value={updateCount} icon={Edit} tone="info" />
+              <KpiStatCard label="Creates" value={createCount} icon={Plus} tone="success" />
+              <KpiStatCard label="Unique Actors" value={uniqueActors} icon={User} tone="neutral" />
+            </div>
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
               <div className="relative flex-1 sm:max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -329,12 +338,17 @@ export default function ConfigAuditPage() {
           </div>
         </div>
 
-        {/* Audit Table */}
-        <div className="flex-1 overflow-auto p-4 md:p-6">
-          <Card>
+        <div className="flex-1 overflow-auto p-4 md:p-6 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Showing{' '}
+            <span className="font-medium text-foreground tabular-nums">{filteredEvents.length}</span> of{' '}
+            <span className="font-medium text-foreground tabular-nums">{MOCK_CONFIG_AUDIT.length}</span>{' '}
+            events
+          </p>
+          <div className="border rounded-xl overflow-hidden bg-card shadow-[var(--shadow-xs)]">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/40 hover:bg-muted/40">
                   <TableHead>Timestamp</TableHead>
                   <TableHead>Actor</TableHead>
                   <TableHead>Entity</TableHead>
@@ -430,13 +444,15 @@ export default function ConfigAuditPage() {
                 })}
               </TableBody>
             </Table>
-          </Card>
+          </div>
 
           {filteredEvents.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <History className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-dashed bg-muted/20">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-4">
+                <History className="h-7 w-7 text-muted-foreground/60" />
+              </div>
               <h3 className="font-semibold text-lg">No audit events found</h3>
-              <p className="page-description mt-1">
+              <p className="page-description mt-1 max-w-sm">
                 Try adjusting your search or filters
               </p>
             </div>

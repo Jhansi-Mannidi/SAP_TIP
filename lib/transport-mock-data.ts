@@ -220,6 +220,8 @@ const ME21N_TRANSPORT: Transport = {
 }
 
 // Generate 15 transports with variety
+import { SUPPLEMENTAL_TRANSPORTS } from './mock-data-supplement'
+
 export const MOCK_TRANSPORTS: Transport[] = [
   ME21N_TRANSPORT,
   {
@@ -610,6 +612,7 @@ export const MOCK_TRANSPORTS: Transport[] = [
     classified_at: '2026-05-06T14:30:00+05:30',
     analyzed_at: '2026-05-06T16:00:00+05:30',
   },
+  ...SUPPLEMENTAL_TRANSPORTS,
 ]
 
 // Audit trail for the ME21N transport

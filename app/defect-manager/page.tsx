@@ -1008,7 +1008,7 @@ export default function AllDefectsPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="page-breadcrumb">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                       <UserPlus className="h-4 w-4" />
                     </div>

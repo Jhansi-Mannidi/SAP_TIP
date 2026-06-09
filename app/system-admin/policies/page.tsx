@@ -6,7 +6,6 @@ import {
   ScrollText,
   Plus,
   Search,
-  Filter,
   MoreHorizontal,
   CheckCircle2,
   AlertCircle,
@@ -27,19 +26,12 @@ import {
 } from 'lucide-react'
 
 import { AppShell } from '@/components/app-shell'
-import { PageHeader, PageSection, StaggerGrid } from '@/components/design-system'
+import { KpiStatCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -203,14 +195,13 @@ function formatDate(dateString: string) {
 
 export default function PoliciesPage() {
   const [searchQuery, setSearchQuery] = React.useState('')
-  const [categoryFilter, setCategoryFilter] = React.useState<string>('all')
   const [policies, setPolicies] = React.useState(MOCK_POLICIES)
 
-  const filteredPolicies = policies.filter(policy => {
-    const matchesSearch = policy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      policy.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = categoryFilter === 'all' || policy.category === categoryFilter
-    return matchesSearch && matchesCategory
+  const filteredPolicies = policies.filter((policy) => {
+    const q = searchQuery.toLowerCase()
+    return (
+      policy.name.toLowerCase().includes(q) || policy.description.toLowerCase().includes(q)
+    )
   })
 
   const togglePolicy = (id: string) => {
@@ -234,67 +225,34 @@ export default function PoliciesPage() {
                   Configure governance policies for execution, data handling, access control, and healing behavior.
                 </p>
               </div>
-              <Button className="gap-2 shrink-0">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">New Policy</span>
+              <Button className="gap-2 shrink-0" asChild>
+                <Link href="/system-admin/policies/new">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">New Policy</span>
+                </Link>
               </Button>
             </div>
 
-            {/* Stats */}
-            <StaggerGrid columns="grid-cols-2 md:grid-cols-4" className="gap-3 mt-4" fast>
-              <Card>
-                <div className="flex items-center gap-2">
-                  <ScrollText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Total</span>
-                </div>
-                <p className="stat-value mt-1">{policies.length}</p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span className="text-sm text-muted-foreground">Enabled</span>
-                </div>
-                <p className="stat-value mt-1">{enabledCount}</p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm text-muted-foreground">Disabled</span>
-                </div>
-                <p className="stat-value mt-1">{policies.length - enabledCount}</p>
-              </Card>
-              <Card>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-indigo-500" />
-                  <span className="text-sm text-muted-foreground">Categories</span>
-                </div>
-                <p className="stat-value mt-1">{POLICY_CATEGORIES.length}</p>
-              </Card>
-            </StaggerGrid>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+              <KpiStatCard label="Total Policies" value={policies.length} icon={ScrollText} tone="brand" />
+              <KpiStatCard label="Enabled" value={enabledCount} icon={CheckCircle2} tone="success" />
+              <KpiStatCard
+                label="Disabled"
+                value={policies.length - enabledCount}
+                icon={AlertCircle}
+                tone="warning"
+              />
+              <KpiStatCard label="Categories" value={POLICY_CATEGORIES.length} icon={Shield} tone="info" />
+            </div>
 
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4">
-              <div className="relative flex-1 sm:max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search policies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[160px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {POLICY_CATEGORIES.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="relative mt-4 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search policies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
             </div>
           </div>
         </div>
@@ -354,12 +312,20 @@ export default function PoliciesPage() {
           </Tabs>
 
           {filteredPolicies.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <ScrollText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-dashed bg-muted/20">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-4">
+                <ScrollText className="h-7 w-7 text-muted-foreground/60" />
+              </div>
               <h3 className="font-semibold text-lg">No policies found</h3>
-              <p className="page-description mt-1">
-                Try adjusting your search or filters
+              <p className="page-description mt-1 max-w-sm">
+                Try adjusting your search or category tab, or create a new governance policy
               </p>
+              <Button size="sm" className="mt-5 gap-2" asChild>
+                <Link href="/system-admin/policies/new">
+                  <Plus className="h-4 w-4" />
+                  New Policy
+                </Link>
+              </Button>
             </div>
           )}
         </div>

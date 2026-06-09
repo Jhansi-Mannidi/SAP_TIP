@@ -85,7 +85,7 @@ export default function ScenarioDetailPage() {
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <div className="page-breadcrumb mb-2">
               <Link href="/execution-console" className="hover:underline">Active Runs</Link>
               <ChevronRight className="h-4 w-4" />
               <Link href={`/execution-console/runs/${runId}`} className="hover:underline">SC_CUTOVER_VAL</Link>

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Search,
@@ -29,28 +30,21 @@ import {
   PROCESS_GROUPS,
   PROCESS_VARIANTS,
   type ProcessVariant,
-  type ProcessVariantStatus,
 } from '@/lib/process-mining-mock-data'
-
-const STATUS_CONFIG: Record<
-  ProcessVariantStatus,
-  { label: string; pill: string }
-> = {
-  covered: { label: 'Covered', pill: 'pill pill-success' },
-  partial: { label: 'Partial', pill: 'pill pill-warning' },
-  gap: { label: 'Gap', pill: 'pill pill-danger' },
-  untested: { label: 'Untested', pill: 'pill pill-neutral' },
-}
+import { VARIANT_STATUS_CONFIG } from '@/components/process-mining/variant-config'
 
 function VariantRow({ variant }: { variant: ProcessVariant }) {
-  const status = STATUS_CONFIG[variant.status]
+  const status = VARIANT_STATUS_CONFIG[variant.status]
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-border/60 bg-muted/10 hover:bg-muted/25 transition-colors">
-      <div className="flex-1 min-w-0">
+    <div className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg border border-border/60 bg-muted/10 hover:bg-muted/25 hover:border-brand/25 transition-colors">
+      <Link
+        href={`/process-mining/variants/${variant.id}`}
+        className="flex-1 min-w-0"
+      >
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] text-muted-foreground">{variant.id}</span>
-          <span className="text-sm font-medium truncate">{variant.name}</span>
+          <span className="text-sm font-medium truncate group-hover:text-brand transition-colors">{variant.name}</span>
           <Badge className={cn('h-5 text-[10px] border-0', status.pill)}>{status.label}</Badge>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
@@ -67,7 +61,7 @@ function VariantRow({ variant }: { variant: ProcessVariant }) {
             {variant.avgDuration}
           </span>
         </div>
-      </div>
+      </Link>
 
       <div className="flex items-center gap-3 sm:w-44 shrink-0">
         <div className="flex-1 min-w-0">
@@ -77,8 +71,15 @@ function VariantRow({ variant }: { variant: ProcessVariant }) {
           </div>
           <Progress value={variant.testCoverage} className="h-1.5" />
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 hidden sm:flex">
-          <ChevronRight className="h-4 w-4" />
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 shrink-0 border-border/80 bg-brand/[0.06] text-muted-foreground hover:bg-brand/15 hover:text-brand hover:border-brand/35 transition-colors"
+          asChild
+        >
+          <Link href={`/process-mining/variants/${variant.id}`} aria-label={`View ${variant.name}`}>
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { 
   Camera,
   Plus,
@@ -351,9 +352,16 @@ export default function MasterDataSnapshotsPage() {
                     </TableCell>
                     <TableCell>
                       {snapshot.restorable_as_fixture && (
-                        <Button variant="link" size="sm" className="h-auto p-0 gap-1 text-primary">
-                          Create Fixture
-                          <ArrowRight className="h-3 w-3" />
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 gap-1 text-brand font-medium"
+                          asChild
+                        >
+                          <Link href={`/test-repository/snapshots/${snapshot.id}/create-fixture`}>
+                            Create Fixture
+                            <ArrowRight className="h-3 w-3" />
+                          </Link>
                         </Button>
                       )}
                     </TableCell>

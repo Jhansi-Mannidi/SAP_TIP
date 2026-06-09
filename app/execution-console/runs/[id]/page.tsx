@@ -146,7 +146,7 @@ export default function RunDetailPage() {
           <div className="p-4 md:p-6">
             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <div className="page-breadcrumb mb-1">
                   <Link href="/execution-console" className="hover:underline">Active Runs</Link>
                   <ChevronRight className="h-4 w-4" />
                   <span>Run Detail</span>

@@ -111,9 +111,11 @@ export default function OrgKBPage() {
                     <span className="hidden sm:inline">Search</span>
                   </Link>
                 </Button>
-                <Button size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New Article</span>
+                <Button size="sm" className="gap-2" asChild>
+                  <Link href="/knowledge-center/org/articles/new">
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden sm:inline">New Article</span>
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -166,8 +168,8 @@ export default function OrgKBPage() {
                 <SelectContent>
                   <SelectItem value="all">All Visibility</SelectItem>
                   <SelectItem value="org">Organization Only</SelectItem>
-                  <SelectItem value="workspace">Workspace Only</SelectItem>
-                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value="team">Workspace Only</SelectItem>
+                  <SelectItem value="private">Private</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -206,7 +208,7 @@ export default function OrgKBPage() {
                               )}
                             </div>
                             <p className="page-description line-clamp-2">
-                              {article.summary}
+                              {article.description}
                             </p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
@@ -215,7 +217,7 @@ export default function OrgKBPage() {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {formatRelativeTime(article.updated_at)}
+                                {formatRelativeTime(article.lastUpdated)}
                               </span>
                               <div className="flex gap-1">
                                 {article.tags.slice(0, 3).map(tag => (

@@ -260,7 +260,7 @@ export default function SignOffPackPage() {
                       
                       {section.signed_by && (
                         <div className="mt-4 pt-3 border-t flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="page-breadcrumb">
                             <PenTool className="h-4 w-4" />
                             <span>Signed by {section.signed_by}</span>
                           </div>

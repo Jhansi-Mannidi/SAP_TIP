@@ -75,7 +75,7 @@ function DecisionCard({ decision, onSelect }: { decision: Decision; onSelect: ()
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="page-breadcrumb">
             <Users className="h-4 w-4" />
             <span>Raised by {decision.raised_by.name}</span>
           </div>

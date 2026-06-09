@@ -112,7 +112,7 @@ function BulkTriageContent() {
     <AppShell currentApp="defect-manager">
       <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto">
         {/* Back link */}
-        <Link href="/defect-manager" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground w-fit">
+        <Link href="/defect-manager" className="page-breadcrumb hover:text-foreground w-fit">
           <ArrowLeft className="h-4 w-4" />
           Back to Defects
         </Link>

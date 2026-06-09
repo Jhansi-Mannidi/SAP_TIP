@@ -50,7 +50,7 @@ export default function SignOffPage() {
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4 md:p-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+            <div className="page-breadcrumb mb-2">
               <Link href={`/execution-console/runs/${runId}`} className="hover:underline flex items-center gap-1">
                 <ChevronLeft className="h-4 w-4" />
                 Run Detail
